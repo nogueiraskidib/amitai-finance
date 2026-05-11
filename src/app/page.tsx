@@ -246,18 +246,19 @@ export default function Dashboard() {
             </div>
           ) : chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
                 <XAxis 
                   dataKey="name" 
                   stroke="#9ca3af" 
-                  fontSize={12} 
+                  fontSize={10} 
                   tickLine={false} 
                   axisLine={false} 
+                  tick={{ dy: 10 }}
                 />
                 <YAxis 
                   stroke="#9ca3af" 
-                  fontSize={12} 
+                  fontSize={10} 
                   tickLine={false} 
                   axisLine={false} 
                   tickFormatter={(value) => `R$ ${value}`}

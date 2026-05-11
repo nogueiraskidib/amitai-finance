@@ -169,8 +169,8 @@ export default function Historico() {
       </header>
 
       <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[750px]">
             <thead>
               <tr className="bg-brand-bg/50 border-b border-brand-border text-brand-muted text-sm uppercase tracking-wider">
                 <th className="p-4 font-medium">Data</th>

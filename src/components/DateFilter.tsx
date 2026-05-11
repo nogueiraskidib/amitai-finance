@@ -55,7 +55,7 @@ export default function DateFilter() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-brand-card border border-brand-border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-72 bg-brand-card border border-brand-border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-2 flex flex-col gap-1">
             <button 
               onClick={() => { setFilterType('mes_atual'); setIsOpen(false); }}
