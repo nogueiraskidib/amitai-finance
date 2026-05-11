@@ -3,6 +3,8 @@
 import { Download, PieChart as PieChartIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFilter } from '@/contexts/FilterContext';
+import DateFilter from '@/components/DateFilter';
 
 export default function Fechamento() {
   const [loading, setLoading] = useState(true);
@@ -15,69 +17,86 @@ export default function Fechamento() {
   const [gastos, setGastos] = useState<any[]>([]);
   const [totalGastos, setTotalGastos] = useState(0);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: recData } = await supabase.from('receitas').select('*');
-        const { data: gasData } = await supabase.from('gastos').select('*');
+  const { startDate, endDate } = useFilter();
 
-        let sumEntradas = 0;
-        let sumNeto = 0;
-        let sumGabriel = 0;
-        let sumManu = 0;
-        let sumCaixa = 0;
+  const fetchData = async () => {
+    if (!startDate || !endDate) return;
+    setLoading(true);
 
-        if (recData) {
-          recData.forEach(r => {
-            sumEntradas += r.valor || 0;
-            sumNeto += r.neto_valor || 0;
-            sumGabriel += r.gabriel_valor || 0;
-            sumManu += r.manu_valor || 0;
-            sumCaixa += r.empresa_valor || 0;
-          });
-        }
+    try {
+      const { data: recData } = await supabase
+        .from('receitas')
+        .select('*')
+        .gte('data', startDate)
+        .lte('data', endDate);
 
-        let sumGastos = 0;
-        if (gasData) {
-          gasData.forEach(g => {
-            sumGastos += g.valor || 0;
-          });
-          setGastos(gasData);
-        }
+      const { data: gasData } = await supabase
+        .from('gastos')
+        .select('*')
+        .gte('data', startDate)
+        .lte('data', endDate);
 
-        setTotalEntradas(sumEntradas);
-        setSaldoNeto(sumNeto);
-        setSaldoGabriel(sumGabriel);
-        setSaldoManu(sumManu);
-        setCaixaBruto(sumCaixa);
-        setTotalGastos(sumGastos);
+      let sumEntradas = 0;
+      let sumNeto = 0;
+      let sumGabriel = 0;
+      let sumManu = 0;
+      let sumCaixa = 0;
 
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      if (recData) {
+        recData.forEach(r => {
+          sumEntradas += r.valor || 0;
+          sumNeto += r.neto_valor || 0;
+          sumGabriel += r.gabriel_valor || 0;
+          sumManu += r.manu_valor || 0;
+          sumCaixa += r.empresa_valor || 0;
+        });
       }
-    }
 
+      let sumGastos = 0;
+      if (gasData) {
+        gasData.forEach(g => {
+          sumGastos += g.valor || 0;
+        });
+        setGastos(gasData);
+      }
+
+      setTotalEntradas(sumEntradas);
+      setSaldoNeto(sumNeto);
+      setSaldoGabriel(sumGabriel);
+      setSaldoManu(sumManu);
+      setCaixaBruto(sumCaixa);
+      setTotalGastos(sumGastos);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
 
     window.addEventListener('focus', fetchData);
     return () => window.removeEventListener('focus', fetchData);
-  }, []);
+  }, [startDate, endDate]);
 
   const saldoFinalEmpresa = caixaBruto - totalGastos;
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="mb-8 flex justify-between items-center">
+      <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Fechamento Mensal</h1>
-          <p className="text-brand-muted mt-1">Resumo geral das finanças do mês atual.</p>
+          <h1 className="text-3xl font-bold text-white">Fechamento Geral</h1>
+          <p className="text-brand-muted mt-1">Resumo completo das finanças no período selecionado.</p>
         </div>
-        <button className="bg-brand-bg border border-brand-border hover:bg-brand-card-hover text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
-          <Download size={18} />
-          Exportar PDF
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <DateFilter />
+          <button className="w-full sm:w-auto bg-brand-bg border border-brand-border hover:bg-brand-card-hover text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <Download size={18} />
+            Exportar PDF
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

@@ -3,6 +3,8 @@
 import { ArrowDownRight, ArrowUpRight, Edit2, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFilter } from '@/contexts/FilterContext';
+import DateFilter from '@/components/DateFilter';
 
 interface Transacao {
   id: string;
@@ -23,10 +25,24 @@ export default function Historico() {
   const [editValor, setEditValor] = useState('');
   const [editDescricao, setEditDescricao] = useState('');
 
+  const { startDate, endDate } = useFilter();
+
   const fetchData = async () => {
+    if (!startDate || !endDate) return;
+    setLoading(true);
+
     try {
-      const { data: receitas, error: errReceitas } = await supabase.from('receitas').select('*');
-      const { data: gastos, error: errGastos } = await supabase.from('gastos').select('*');
+      const { data: receitas, error: errReceitas } = await supabase
+        .from('receitas')
+        .select('*')
+        .gte('data', startDate)
+        .lte('data', endDate);
+
+      const { data: gastos, error: errGastos } = await supabase
+        .from('gastos')
+        .select('*')
+        .gte('data', startDate)
+        .lte('data', endDate);
 
       if (errReceitas) console.error(errReceitas);
       if (errGastos) console.error(errGastos);
@@ -71,7 +87,7 @@ export default function Historico() {
     fetchData();
     window.addEventListener('focus', fetchData);
     return () => window.removeEventListener('focus', fetchData);
-  }, []);
+  }, [startDate, endDate]);
 
   const handleDelete = async (idStr: string, tipo: 'entrada' | 'gasto') => {
     const confirm = window.confirm(`Tem certeza que deseja remover esta ${tipo}?`);
@@ -144,9 +160,12 @@ export default function Historico() {
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Histórico de Transações</h1>
-        <p className="text-brand-muted mt-1">Acompanhe todas as entradas e saídas da empresa.</p>
+      <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Histórico de Transações</h1>
+          <p className="text-brand-muted mt-1">Acompanhe todas as entradas e saídas da empresa.</p>
+        </div>
+        <DateFilter />
       </header>
 
       <div className="glass-card overflow-hidden">

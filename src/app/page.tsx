@@ -4,6 +4,8 @@ import { DollarSign, TrendingUp, TrendingDown, Users, Wallet, ArrowUpRight, Arro
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useFilter } from '@/contexts/FilterContext';
+import DateFilter from '@/components/DateFilter';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -16,11 +18,25 @@ export default function Dashboard() {
   const [saldoGabriel, setSaldoGabriel] = useState(0);
   const [saldoManu, setSaldoManu] = useState(0);
 
+  const { startDate, endDate } = useFilter();
+
   useEffect(() => {
     async function fetchData() {
+      if (!startDate || !endDate) return;
+
+      setLoading(true);
       try {
-        const { data: receitas, error: errReceitas } = await supabase.from('receitas').select('*');
-        const { data: gastos, error: errGastos } = await supabase.from('gastos').select('*');
+        const { data: receitas, error: errReceitas } = await supabase
+          .from('receitas')
+          .select('*')
+          .gte('data', startDate)
+          .lte('data', endDate);
+
+        const { data: gastos, error: errGastos } = await supabase
+          .from('gastos')
+          .select('*')
+          .gte('data', startDate)
+          .lte('data', endDate);
 
         let sumEntradas = 0;
         let sumGastos = 0;
@@ -30,7 +46,6 @@ export default function Dashboard() {
         let sumCaixa = 0;
 
         if (receitas) {
-          console.log('[Dashboard] Receitas encontradas:', receitas);
           receitas.forEach(r => {
             sumEntradas += r.valor || 0;
             sumNeto += r.neto_valor || 0;
@@ -38,17 +53,12 @@ export default function Dashboard() {
             sumManu += r.manu_valor || 0;
             sumCaixa += r.empresa_valor || 0;
           });
-        } else {
-          console.log('[Dashboard] Nenhuma receita retornada ou ocorreu um erro.', errReceitas);
         }
 
         if (gastos) {
-          console.log('[Dashboard] Gastos encontrados:', gastos);
           gastos.forEach(g => {
             sumGastos += g.valor || 0;
           });
-        } else {
-          console.log('[Dashboard] Nenhum gasto retornado ou ocorreu um erro.', errGastos);
         }
 
         setTotalEntradas(sumEntradas);
@@ -71,11 +81,7 @@ export default function Dashboard() {
 
     window.addEventListener('focus', fetchData);
     return () => window.removeEventListener('focus', fetchData);
-  }, []);
-
-  const data = [
-    { name: 'Atual', entradas: totalEntradas, gastos: totalGastos },
-  ];
+  }, [startDate, endDate]);
 
   const partners = [
     { name: 'Neto', balance: `R$ ${saldoNeto.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-blue-500 to-indigo-600' },
@@ -85,11 +91,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard Principal</h1>
           <p className="text-brand-muted mt-1">Bem-vindo ao Amitai Finance, acompanhe seus números.</p>
         </div>
+        <DateFilter />
       </header>
 
       {/* Main KPI Cards */}
@@ -98,7 +105,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-sm font-medium">Caixa da Empresa (10% - Gastos)</p>
-              <h3 className="text-3xl font-bold text-white mt-2">R$ {caixaEmpresa.toFixed(2).replace('.', ',')}</h3>
+              <h3 className="text-3xl font-bold text-white mt-2">
+                {loading ? '...' : `R$ ${caixaEmpresa.toFixed(2).replace('.', ',')}`}
+              </h3>
             </div>
             <div className="p-3 bg-brand-primary-dim rounded-lg">
               <Wallet className="text-brand-primary" size={24} />
@@ -110,7 +119,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-sm font-medium">Total Recebido</p>
-              <h3 className="text-2xl font-bold text-white mt-2">R$ {totalEntradas.toFixed(2).replace('.', ',')}</h3>
+              <h3 className="text-2xl font-bold text-white mt-2">
+                {loading ? '...' : `R$ ${totalEntradas.toFixed(2).replace('.', ',')}`}
+              </h3>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
               <TrendingUp className="text-blue-500" size={24} />
@@ -122,7 +133,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-sm font-medium">Gastos</p>
-              <h3 className="text-2xl font-bold text-white mt-2">R$ {totalGastos.toFixed(2).replace('.', ',')}</h3>
+              <h3 className="text-2xl font-bold text-white mt-2">
+                {loading ? '...' : `R$ ${totalGastos.toFixed(2).replace('.', ',')}`}
+              </h3>
             </div>
             <div className="p-3 bg-brand-danger-dim rounded-lg">
               <TrendingDown className="text-brand-danger" size={24} />
@@ -134,7 +147,9 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-sm font-medium">Lucro Líquido</p>
-              <h3 className="text-2xl font-bold text-white mt-2">R$ {lucroLiquido.toFixed(2).replace('.', ',')}</h3>
+              <h3 className="text-2xl font-bold text-white mt-2">
+                {loading ? '...' : `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`}
+              </h3>
             </div>
             <div className="p-3 bg-emerald-500/10 rounded-lg">
               <DollarSign className="text-emerald-500" size={24} />
@@ -156,7 +171,9 @@ export default function Dashboard() {
             </div>
             <div className="relative z-10">
               <p className="text-brand-muted text-sm mb-1">Saldo Atual</p>
-              <p className="text-3xl font-bold text-white">{partner.balance}</p>
+              <p className="text-3xl font-bold text-white">
+                {loading ? '...' : partner.balance}
+              </p>
             </div>
           </div>
         ))}
