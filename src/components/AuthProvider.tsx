@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Sidebar from './Sidebar';
+import MobileNav from './MobileNav';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any>(null);
@@ -103,8 +104,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   return (
     <div className="flex min-h-screen w-full bg-brand-bg text-brand-text">
       <Sidebar />
-      <main className="flex-1 w-full flex flex-col overflow-x-hidden p-6 md:p-10 custom-scrollbar h-screen overflow-y-auto">
-        {children}
+      <MobileNav />
+      <main className="flex-1 w-full flex flex-col overflow-x-hidden p-4 pt-24 pb-24 md:p-10 custom-scrollbar h-screen overflow-y-auto">
+        <div className="max-w-7xl mx-auto w-full">
+          {children}
+        </div>
       </main>
     </div>
   );
