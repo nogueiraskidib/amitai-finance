@@ -175,11 +175,11 @@ export default function Dashboard() {
 
       {/* Main KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-card p-6 border-l-4 border-l-brand-primary">
+        <div className="glass-card p-6 border-l-4 border-l-brand-primary glow-primary">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-sm font-medium">Caixa da Empresa (10% - Gastos)</p>
-              <h3 className="text-3xl font-bold text-white mt-2">
+              <h3 className="text-3xl font-bold mt-2 text-gradient">
                 {loading ? '...' : `R$ ${caixaEmpresa.toFixed(2).replace('.', ',')}`}
               </h3>
             </div>

@@ -21,7 +21,7 @@ export default function MobileNav() {
       {/* Top Header Mobile */}
       <header className="md:hidden fixed top-0 left-0 right-0 bg-brand-card border-b border-brand-border z-40 px-4 py-4 flex justify-between items-center shadow-md">
         <h1 className="text-xl font-bold text-white flex items-center gap-1">
-          Amitai<span className="text-brand-primary">Finance</span>
+          Amitai<span className="text-gradient">Finance</span>
         </h1>
         <button 
           onClick={async () => await supabase.auth.signOut()}

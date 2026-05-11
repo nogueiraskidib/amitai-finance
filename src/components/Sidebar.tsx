@@ -22,7 +22,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-brand-card border-r border-brand-border h-screen sticky top-0 flex flex-col hidden md:flex">
       <div className="p-6 border-b border-brand-border">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          Amitai<span className="text-brand-primary">Finance</span>
+          Amitai<span className="text-gradient">Finance</span>
         </h1>
       </div>
       

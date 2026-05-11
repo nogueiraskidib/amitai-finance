@@ -55,7 +55,11 @@ export default function DateFilter() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 md:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-72 bg-brand-card border border-brand-border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+        <>
+          {/* Mobile Overlay */}
+          <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => setIsOpen(false)} />
+          
+          <div className="fixed md:absolute bottom-4 left-4 right-4 md:bottom-auto md:left-auto md:right-0 md:top-full mt-2 z-[60] md:z-50 w-auto md:w-72 bg-brand-card border border-brand-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-top-2 duration-200">
           <div className="p-2 flex flex-col gap-1">
             <button 
               onClick={() => { setFilterType('mes_atual'); setIsOpen(false); }}
@@ -104,7 +108,8 @@ export default function DateFilter() {
               Aplicar Filtro
             </button>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

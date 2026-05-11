@@ -154,14 +154,14 @@ export default function Fechamento() {
         </div>
       </div>
 
-      <div className="glass-card p-6 bg-gradient-to-r from-brand-card to-brand-bg border-brand-primary/30">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="glass-card p-6 bg-gradient-to-br from-brand-card to-brand-bg border-brand-primary/30 glow-primary">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-6 text-center sm:text-left">
           <div>
-            <h3 className="text-lg font-medium text-brand-muted">Saldo Final da Empresa no Mês</h3>
+            <h3 className="text-lg font-medium text-brand-muted">Saldo Final da Empresa</h3>
             <p className="text-sm text-brand-muted mt-1">(Caixa 10% - Gastos Operacionais)</p>
           </div>
-          <div className="text-right">
-            <span className={`text-4xl font-bold ${saldoFinalEmpresa < 0 ? 'text-brand-danger' : 'text-brand-primary'}`}>
+          <div className="sm:text-right">
+            <span className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${saldoFinalEmpresa < 0 ? 'text-brand-danger' : 'text-gradient'}`}>
               R$ {saldoFinalEmpresa.toFixed(2).replace('.', ',')}
             </span>
           </div>
