@@ -1,65 +1,158 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { DollarSign, TrendingUp, TrendingDown, Users, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [totalEntradas, setTotalEntradas] = useState(0);
+  const [totalGastos, setTotalGastos] = useState(0);
+  const [lucroLiquido, setLucroLiquido] = useState(0);
+  const [caixaEmpresa, setCaixaEmpresa] = useState(0);
+
+  const [saldoNeto, setSaldoNeto] = useState(0);
+  const [saldoGabriel, setSaldoGabriel] = useState(0);
+  const [saldoManu, setSaldoManu] = useState(0);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: receitas } = await supabase.from('receitas').select('*');
+        const { data: gastos } = await supabase.from('gastos').select('*');
+
+        let sumEntradas = 0;
+        let sumGastos = 0;
+        let sumNeto = 0;
+        let sumGabriel = 0;
+        let sumManu = 0;
+        let sumCaixa = 0;
+
+        if (receitas) {
+          receitas.forEach(r => {
+            sumEntradas += r.valor || 0;
+            sumNeto += r.neto_valor || 0;
+            sumGabriel += r.gabriel_valor || 0;
+            sumManu += r.manu_valor || 0;
+            sumCaixa += r.empresa_valor || 0;
+          });
+        }
+
+        if (gastos) {
+          gastos.forEach(g => {
+            sumGastos += g.valor || 0;
+          });
+        }
+
+        setTotalEntradas(sumEntradas);
+        setTotalGastos(sumGastos);
+        setLucroLiquido(sumEntradas - sumGastos);
+        setCaixaEmpresa(sumCaixa - sumGastos);
+
+        setSaldoNeto(sumNeto);
+        setSaldoGabriel(sumGabriel);
+        setSaldoManu(sumManu);
+
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  const data = [
+    { name: 'Atual', entradas: totalEntradas, gastos: totalGastos },
+  ];
+
+  const partners = [
+    { name: 'Neto', balance: `R$ ${saldoNeto.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-blue-500 to-indigo-600' },
+    { name: 'Gabriel', balance: `R$ ${saldoGabriel.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-emerald-500 to-teal-600' },
+    { name: 'Manu', balance: `R$ ${saldoManu.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-purple-500 to-fuchsia-600' },
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Dashboard Principal</h1>
+          <p className="text-brand-muted mt-1">Bem-vindo ao Amitai Finance, acompanhe seus números.</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="glass-card p-6 border-l-4 border-l-brand-primary">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-sm font-medium">Caixa da Empresa (10% - Gastos)</p>
+              <h3 className="text-3xl font-bold text-white mt-2">R$ {caixaEmpresa.toFixed(2).replace('.', ',')}</h3>
+            </div>
+            <div className="p-3 bg-brand-primary-dim rounded-lg">
+              <Wallet className="text-brand-primary" size={24} />
+            </div>
+          </div>
         </div>
-      </main>
+
+        <div className="glass-card p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-sm font-medium">Total Recebido</p>
+              <h3 className="text-2xl font-bold text-white mt-2">R$ {totalEntradas.toFixed(2).replace('.', ',')}</h3>
+            </div>
+            <div className="p-3 bg-blue-500/10 rounded-lg">
+              <TrendingUp className="text-blue-500" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-sm font-medium">Gastos</p>
+              <h3 className="text-2xl font-bold text-white mt-2">R$ {totalGastos.toFixed(2).replace('.', ',')}</h3>
+            </div>
+            <div className="p-3 bg-brand-danger-dim rounded-lg">
+              <TrendingDown className="text-brand-danger" size={24} />
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-sm font-medium">Lucro Líquido</p>
+              <h3 className="text-2xl font-bold text-white mt-2">R$ {lucroLiquido.toFixed(2).replace('.', ',')}</h3>
+            </div>
+            <div className="p-3 bg-emerald-500/10 rounded-lg">
+              <DollarSign className="text-emerald-500" size={24} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Partners Balances */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {partners.map((partner) => (
+          <div key={partner.name} className="glass-card p-6 relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${partner.color} opacity-10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110`} />
+            <div className="relative z-10 flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold text-white">{partner.name}</h4>
+              <span className="text-xs font-medium px-2 py-1 bg-brand-bg rounded-full border border-brand-border text-brand-muted">
+                {partner.percentage}
+              </span>
+            </div>
+            <div className="relative z-10">
+              <p className="text-brand-muted text-sm mb-1">Saldo Atual</p>
+              <p className="text-3xl font-bold text-white">{partner.balance}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }
