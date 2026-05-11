@@ -90,9 +90,12 @@ export default function Fechamento() {
           <h1 className="text-3xl font-bold text-white">Fechamento Geral</h1>
           <p className="text-brand-muted mt-1">Resumo completo das finanças no período selecionado.</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto print:hidden">
           <DateFilter />
-          <button className="w-full sm:w-auto bg-brand-bg border border-brand-border hover:bg-brand-card-hover text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+          <button 
+            onClick={() => window.print()}
+            className="w-full sm:w-auto bg-brand-bg border border-brand-border hover:bg-brand-card-hover text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
             <Download size={18} />
             Exportar PDF
           </button>

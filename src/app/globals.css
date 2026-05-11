@@ -81,3 +81,53 @@
 .animate-page {
   animation: slideUpFade 0.6s ease-out forwards;
 }
+
+@media print {
+  /* Hide navigation elements */
+  aside, 
+  header.md\:hidden, 
+  nav.md\:hidden {
+    display: none !important;
+  }
+
+  /* Reset main container for printing */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Adjust background for better print quality */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .glass-card {
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    color: black !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  h1, h2, h3, h4, p, span {
+    color: black !important;
+  }
+
+  .text-brand-muted {
+    color: #4b5563 !important;
+  }
+
+  .text-gradient {
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+    color: #0d9488 !important; /* Dark teal for primary */
+    font-weight: bold !important;
+  }
+
+  .glow-primary {
+    shadow: none !important;
+  }
+}
