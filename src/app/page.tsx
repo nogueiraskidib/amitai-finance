@@ -62,6 +62,9 @@ export default function Dashboard() {
     }
 
     fetchData();
+
+    window.addEventListener('focus', fetchData);
+    return () => window.removeEventListener('focus', fetchData);
   }, []);
 
   const data = [

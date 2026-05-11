@@ -65,6 +65,9 @@ export default function Historico() {
     }
 
     fetchData();
+
+    window.addEventListener('focus', fetchData);
+    return () => window.removeEventListener('focus', fetchData);
   }, []);
 
   return (

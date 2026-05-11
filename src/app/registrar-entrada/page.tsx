@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { Save, User, DollarSign, Calendar, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function RegistrarEntrada() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [cliente, setCliente] = useState('');
   const [valor, setValor] = useState('');
@@ -47,6 +49,8 @@ export default function RegistrarEntrada() {
         setValor('');
         setData('');
         setObservacao('');
+        router.push('/');
+        router.refresh();
       }
     } catch (err) {
       console.error(err);

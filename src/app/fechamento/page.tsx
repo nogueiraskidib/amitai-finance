@@ -60,6 +60,9 @@ export default function Fechamento() {
     }
 
     fetchData();
+
+    window.addEventListener('focus', fetchData);
+    return () => window.removeEventListener('focus', fetchData);
   }, []);
 
   const saldoFinalEmpresa = caixaBruto - totalGastos;
