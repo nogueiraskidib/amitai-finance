@@ -1,7 +1,17 @@
 'use client';
 
-import { DollarSign, TrendingUp, TrendingDown, Users, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { DollarSign, TrendingUp, TrendingDown, Users, Wallet, ArrowUpRight, ArrowDownRight, BarChart3 } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  ResponsiveContainer, 
+  CartesianGrid, 
+  Legend,
+  Cell
+} from 'recharts';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useFilter } from '@/contexts/FilterContext';
@@ -17,8 +27,9 @@ export default function Dashboard() {
   const [saldoNeto, setSaldoNeto] = useState(0);
   const [saldoGabriel, setSaldoGabriel] = useState(0);
   const [saldoManu, setSaldoManu] = useState(0);
+  const [chartData, setChartData] = useState<any[]>([]);
 
-  const { startDate, endDate } = useFilter();
+  const { startDate, endDate, filterType } = useFilter();
 
   useEffect(() => {
     async function fetchData() {
@@ -45,6 +56,9 @@ export default function Dashboard() {
         let sumManu = 0;
         let sumCaixa = 0;
 
+        // Processamento para o gráfico
+        const dataMap: { [key: string]: { name: string, receitas: number, gastos: number, lucro: number } } = {};
+
         if (receitas) {
           receitas.forEach(r => {
             sumEntradas += r.valor || 0;
@@ -52,13 +66,73 @@ export default function Dashboard() {
             sumGabriel += r.gabriel_valor || 0;
             sumManu += r.manu_valor || 0;
             sumCaixa += r.empresa_valor || 0;
+
+            // Agrupamento por data
+            const dateKey = r.data; // YYYY-MM-DD
+            if (!dataMap[dateKey]) {
+              dataMap[dateKey] = { name: new Date(dateKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), receitas: 0, gastos: 0, lucro: 0 };
+            }
+            dataMap[dateKey].receitas += r.valor || 0;
           });
         }
 
         if (gastos) {
           gastos.forEach(g => {
             sumGastos += g.valor || 0;
+
+            const dateKey = g.data;
+            if (!dataMap[dateKey]) {
+              dataMap[dateKey] = { name: new Date(dateKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), receitas: 0, gastos: 0, lucro: 0 };
+            }
+            dataMap[dateKey].gastos += g.valor || 0;
           });
+        }
+
+        // Converter mapa para array ordenado
+        const sortedData = Object.keys(dataMap)
+          .sort()
+          .map(key => {
+            const item = dataMap[key];
+            item.lucro = item.receitas - item.gastos;
+            return item;
+          });
+
+        // Se o período for longo (mais de 35 dias), agrupar por mês em vez de dia para melhor visualização
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 35) {
+          const monthlyMap: { [key: string]: any } = {};
+          [...(receitas || []), ...(gastos || [])].forEach(item => {
+            const date = new Date(item.data);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyMap[monthKey]) {
+              monthlyMap[monthKey] = { 
+                name: date.toLocaleDateString('pt-BR', { month: 'long' }), 
+                receitas: 0, 
+                gastos: 0, 
+                lucro: 0 
+              };
+            }
+            if (item.cliente !== undefined) { // É receita (cliente existe)
+              monthlyMap[monthKey].receitas += item.valor || 0;
+            } else { // É gasto
+              monthlyMap[monthKey].gastos += item.valor || 0;
+            }
+          });
+          
+          const monthlyData = Object.keys(monthlyMap)
+            .sort()
+            .map(key => {
+              const item = monthlyMap[key];
+              item.lucro = item.receitas - item.gastos;
+              return item;
+            });
+          setChartData(monthlyData);
+        } else {
+          setChartData(sortedData);
         }
 
         setTotalEntradas(sumEntradas);
@@ -155,6 +229,61 @@ export default function Dashboard() {
               <DollarSign className="text-emerald-500" size={24} />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Chart Section */}
+      <div className="glass-card p-6 min-h-[400px] flex flex-col">
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart3 className="text-brand-primary" size={20} />
+          <h3 className="text-xl font-bold text-white">Análise de Desempenho</h3>
+        </div>
+        
+        <div className="flex-1 w-full min-h-[300px]">
+          {loading ? (
+            <div className="w-full h-full flex items-center justify-center text-brand-muted">
+              Carregando gráfico...
+            </div>
+          ) : chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#9ca3af" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                />
+                <YAxis 
+                  stroke="#9ca3af" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ 
+                    backgroundColor: '#111827', 
+                    borderColor: '#374151', 
+                    borderRadius: '8px',
+                    color: '#fff' 
+                  }}
+                  itemStyle={{ fontSize: '12px' }}
+                  formatter={(value: any) => [`R$ ${parseFloat(value).toFixed(2)}`, '']}
+                />
+                <Legend iconType="circle" />
+                <Bar name="Receitas" dataKey="receitas" fill="#14f195" radius={[4, 4, 0, 0]} />
+                <Bar name="Gastos" dataKey="gastos" fill="#ff4d4d" radius={[4, 4, 0, 0]} />
+                <Bar name="Lucro" dataKey="lucro" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-brand-muted">
+              Sem dados para exibir no período selecionado.
+            </div>
+          )}
         </div>
       </div>
 
