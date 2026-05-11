@@ -102,10 +102,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-brand-bg text-brand-text">
+    <div className="flex h-[100dvh] w-full bg-brand-bg text-brand-text overflow-hidden">
       <Sidebar />
       <MobileNav />
-      <main className="flex-1 w-full flex flex-col overflow-x-hidden p-4 pt-24 pb-24 md:p-10 custom-scrollbar h-screen overflow-y-auto">
+      <main className="flex-1 w-full flex flex-col p-4 pt-24 pb-32 md:p-10 custom-scrollbar overflow-y-auto overscroll-contain">
         <div className="max-w-7xl mx-auto w-full">
           {children}
         </div>

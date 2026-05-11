@@ -59,7 +59,7 @@ export default function DateFilter() {
           {/* Mobile Overlay */}
           <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => setIsOpen(false)} />
           
-          <div className="fixed md:absolute bottom-4 left-4 right-4 md:bottom-auto md:left-auto md:right-0 md:top-full mt-2 z-[60] md:z-50 w-auto md:w-72 bg-brand-card border border-brand-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-top-2 duration-200">
+          <div className="fixed md:absolute bottom-28 left-4 right-4 md:bottom-auto md:left-auto md:right-0 md:top-full mt-2 z-[60] md:z-50 w-auto md:w-72 bg-brand-card border border-brand-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-bottom-10 md:slide-in-from-top-2 duration-300">
           <div className="p-2 flex flex-col gap-1">
             <button 
               onClick={() => { setFilterType('mes_atual'); setIsOpen(false); }}
