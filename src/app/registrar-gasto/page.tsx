@@ -31,8 +31,8 @@ export default function RegistrarGasto() {
         ]);
 
       if (error) {
-        console.error(error);
-        alert('Erro ao salvar no banco de dados. Verifique se a tabela "gastos" existe.');
+        console.error('Erro detalhado:', error);
+        alert(`Erro do Supabase: ${error.message}`);
       } else {
         alert('Gasto registrado com sucesso!');
         setDescricao('');

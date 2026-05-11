@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, PlusCircle, MinusCircle, History, CalendarCheck, LogOut } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -46,7 +47,10 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-brand-border">
-        <button className="flex items-center gap-3 px-4 py-3 w-full text-left text-brand-danger hover:bg-brand-danger-dim rounded-xl transition-colors">
+        <button 
+          onClick={async () => await supabase.auth.signOut()}
+          className="flex items-center gap-3 px-4 py-3 w-full text-left text-brand-danger hover:bg-brand-danger-dim rounded-xl transition-colors"
+        >
           <LogOut size={20} />
           Sair
         </button>

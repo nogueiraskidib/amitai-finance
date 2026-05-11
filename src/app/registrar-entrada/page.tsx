@@ -41,8 +41,8 @@ export default function RegistrarEntrada() {
         ]);
 
       if (error) {
-        console.error(error);
-        alert('Erro ao salvar no banco de dados. Verifique se a tabela "receitas" existe com a coluna "neto_valor" (não joao_valor).');
+        console.error('Erro detalhado:', error);
+        alert(`Erro do Supabase: ${error.message}\n(Provavelmente falta a Policy de INSERT ou a coluna neto_valor está errada)`);
       } else {
         alert('Entrada registrada com sucesso!');
         setCliente('');

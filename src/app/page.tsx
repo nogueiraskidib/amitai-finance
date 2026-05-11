@@ -19,8 +19,8 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data: receitas } = await supabase.from('receitas').select('*');
-        const { data: gastos } = await supabase.from('gastos').select('*');
+        const { data: receitas, error: errReceitas } = await supabase.from('receitas').select('*');
+        const { data: gastos, error: errGastos } = await supabase.from('gastos').select('*');
 
         let sumEntradas = 0;
         let sumGastos = 0;
@@ -30,6 +30,7 @@ export default function Dashboard() {
         let sumCaixa = 0;
 
         if (receitas) {
+          console.log('[Dashboard] Receitas encontradas:', receitas);
           receitas.forEach(r => {
             sumEntradas += r.valor || 0;
             sumNeto += r.neto_valor || 0;
@@ -37,12 +38,17 @@ export default function Dashboard() {
             sumManu += r.manu_valor || 0;
             sumCaixa += r.empresa_valor || 0;
           });
+        } else {
+          console.log('[Dashboard] Nenhuma receita retornada ou ocorreu um erro.', errReceitas);
         }
 
         if (gastos) {
+          console.log('[Dashboard] Gastos encontrados:', gastos);
           gastos.forEach(g => {
             sumGastos += g.valor || 0;
           });
+        } else {
+          console.log('[Dashboard] Nenhum gasto retornado ou ocorreu um erro.', errGastos);
         }
 
         setTotalEntradas(sumEntradas);
