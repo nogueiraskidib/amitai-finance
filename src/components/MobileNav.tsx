@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PlusCircle, MinusCircle, History, CalendarCheck, LogOut } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, MinusCircle, History, CalendarCheck, LogOut, Workflow } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { name: 'Gasto', href: '/registrar-gasto', icon: MinusCircle },
   { name: 'Histórico', href: '/historico', icon: History },
   { name: 'Fechamento', href: '/fechamento', icon: CalendarCheck },
+  { name: 'Processos', href: '/processos', icon: Workflow },
 ];
 
 export default function MobileNav() {
