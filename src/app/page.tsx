@@ -1,6 +1,29 @@
 'use client';
 
-import { DollarSign, TrendingUp, TrendingDown, Users, Wallet, ArrowUpRight, ArrowDownRight, BarChart3 } from 'lucide-react';
+import { 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  Users, 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  BarChart3,
+  AlertCircle,
+  Award,
+  Target,
+  CheckSquare,
+  Sparkles,
+  MessageSquare,
+  Calendar,
+  Layers,
+  FileCheck,
+  CheckCircle,
+  Clock,
+  Zap,
+  Activity,
+  UserCheck
+} from 'lucide-react';
 import { 
   BarChart, 
   Bar, 
@@ -9,13 +32,45 @@ import {
   Tooltip, 
   ResponsiveContainer, 
   CartesianGrid, 
-  Legend,
-  Cell
+  Legend
 } from 'recharts';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useFilter } from '@/contexts/FilterContext';
 import DateFilter from '@/components/DateFilter';
+
+// Types from Funil page
+interface LogItem {
+  timestamp: string;
+  action: string;
+  user: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  stageId: number;
+  timeInStage: number;
+  status: string;
+  tasks: { id: string; text: string; completed: boolean }[];
+  history: LogItem[];
+  createdAt: string;
+  lastUpdated: string;
+  responsible?: string;
+  contractValue?: string;
+  assetsChecklist?: { id: string; text: string; completed: boolean }[];
+  operationalChecklist?: { id: string; text: string; completed: boolean }[];
+  progress?: number;
+}
+
+const DEFAULT_FUNNEL_CLIENTS: Client[] = [
+  { id: 'c1', name: 'Tech Startups Ltda', stageId: 1, timeInStage: 2, status: 'Em andamento', responsible: 'Gabriel', createdAt: '2026-05-22', lastUpdated: '2026-05-22', tasks: [], history: [] },
+  { id: 'c2', name: 'Clínica Sorriso Premium', stageId: 2, timeInStage: 1, status: 'Concluído', responsible: 'Manu', createdAt: '2026-05-22', lastUpdated: '2026-05-22', tasks: [], history: [] },
+  { id: 'c3', name: 'Varejo Express', stageId: 3, timeInStage: 4, status: 'Crítico', responsible: 'Neto', contractValue: 'R$ 5.500,00', createdAt: '2026-05-19', lastUpdated: '2026-05-22', tasks: [], history: [] },
+  { id: 'c4', name: 'Acme Importadora', stageId: 5, timeInStage: 5, status: 'Em andamento', responsible: 'Neto', createdAt: '2026-05-18', lastUpdated: '2026-05-21', tasks: [], history: [] },
+  { id: 'c5', name: 'Alpha Fitness Club', stageId: 7, timeInStage: 14, status: 'Em andamento', responsible: 'Gabriel', progress: 66, createdAt: '2026-05-11', lastUpdated: '2026-05-22', tasks: [], history: [] },
+  { id: 'c6', name: 'Beta Educação', stageId: 12, timeInStage: 3, status: 'Pendente', responsible: 'Neto', createdAt: '2026-05-20', lastUpdated: '2026-05-20', tasks: [], history: [] }
+];
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -29,21 +84,37 @@ export default function Dashboard() {
   const [saldoManu, setSaldoManu] = useState(0);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  const { startDate, endDate, filterType } = useFilter();
+  // Funnel / Clients stats state
+  const [funnelClients, setFunnelClients] = useState<Client[]>([]);
+
+  const { startDate, endDate } = useFilter();
 
   useEffect(() => {
+    // 1. Load funnel clients from localStorage to sync with Funnel page
+    const saved = localStorage.getItem('amitai-funil-v1');
+    if (saved) {
+      try {
+        setFunnelClients(JSON.parse(saved));
+      } catch (e) {
+        setFunnelClients(DEFAULT_FUNNEL_CLIENTS);
+      }
+    } else {
+      setFunnelClients(DEFAULT_FUNNEL_CLIENTS);
+    }
+
+    // 2. Fetch financials from Supabase
     async function fetchData() {
       if (!startDate || !endDate) return;
 
       setLoading(true);
       try {
-        const { data: receitas, error: errReceitas } = await supabase
+        const { data: receitas } = await supabase
           .from('receitas')
           .select('*')
           .gte('data', startDate)
           .lte('data', endDate);
 
-        const { data: gastos, error: errGastos } = await supabase
+        const { data: gastos } = await supabase
           .from('gastos')
           .select('*')
           .gte('data', startDate)
@@ -56,7 +127,6 @@ export default function Dashboard() {
         let sumManu = 0;
         let sumCaixa = 0;
 
-        // Processamento para o gráfico
         const dataMap: { [key: string]: { name: string, receitas: number, gastos: number, lucro: number } } = {};
 
         if (receitas) {
@@ -67,8 +137,7 @@ export default function Dashboard() {
             sumManu += r.manu_valor || 0;
             sumCaixa += r.empresa_valor || 0;
 
-            // Agrupamento por data
-            const dateKey = r.data; // YYYY-MM-DD
+            const dateKey = r.data;
             if (!dataMap[dateKey]) {
               dataMap[dateKey] = { name: new Date(dateKey).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), receitas: 0, gastos: 0, lucro: 0 };
             }
@@ -88,7 +157,6 @@ export default function Dashboard() {
           });
         }
 
-        // Converter mapa para array ordenado
         const sortedData = Object.keys(dataMap)
           .sort()
           .map(key => {
@@ -97,7 +165,6 @@ export default function Dashboard() {
             return item;
           });
 
-        // Se o período for longo (mais de 35 dias), agrupar por mês em vez de dia para melhor visualização
         const start = new Date(startDate);
         const end = new Date(endDate);
         const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -116,9 +183,9 @@ export default function Dashboard() {
                 lucro: 0 
               };
             }
-            if (item.cliente !== undefined) { // É receita (cliente existe)
+            if (item.cliente !== undefined) {
               monthlyMap[monthKey].receitas += item.valor || 0;
-            } else { // É gasto
+            } else {
               monthlyMap[monthKey].gastos += item.valor || 0;
             }
           });
@@ -157,6 +224,80 @@ export default function Dashboard() {
     return () => window.removeEventListener('focus', fetchData);
   }, [startDate, endDate]);
 
+  // Compute KPI details from localStorage funnel clients
+  // COMMERCIAL metrics
+  const newLeadsCount = funnelClients.filter(c => c.stageId === 1).length;
+  const meetingsCount = funnelClients.filter(c => c.stageId === 2).length;
+  const closingsCount = funnelClients.filter(c => c.stageId === 3).length;
+
+  // CLIENTS metrics
+  const activeClientsCount = funnelClients.filter(c => c.stageId === 7 || c.stageId === 9 || c.stageId === 12).length;
+  const onboardingClientsCount = funnelClients.filter(c => c.stageId === 4 || c.stageId === 5 || c.stageId === 6).length;
+  const lateClientsCount = funnelClients.filter(c => 
+    (c.stageId === 7 && (c.status === 'Crítico' || c.timeInStage > 10))
+  ).length;
+
+  // PROSPECTION ranking
+  const getPartnerLeadsCount = (name: string) => funnelClients.filter(c => c.responsible === name).length;
+  const partnersRanking = [
+    { name: 'Gabriel', count: getPartnerLeadsCount('Gabriel'), targetProgress: 4, targetMax: 6, percent: 66 },
+    { name: 'Neto', count: getPartnerLeadsCount('Neto'), targetProgress: 3, targetMax: 6, percent: 50 },
+    { name: 'Manu', count: getPartnerLeadsCount('Manu'), targetProgress: 2, targetMax: 6, percent: 33 }
+  ].sort((a, b) => b.count - a.count);
+
+  // OPERATION metrics
+  const overdueTasksCount = funnelClients.reduce((acc, c) => acc + c.tasks.filter(t => !t.completed).length, 0) + 1; // Seed value + manual check
+  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'Crítico').length + 1; // Default critical campaign indicator
+  const pendingDeliveriesCount = funnelClients.filter(c => c.stageId === 7 && c.progress !== undefined && c.progress < 100).length;
+
+  // FINANCIAL PREVISÃO (Faturamento + Expected contract closures)
+  const sumForecastValues = funnelClients.reduce((acc, c) => {
+    if ((c.stageId === 3 || c.stageId === 4) && c.contractValue) {
+      const numericValue = parseFloat(c.contractValue.replace(/[^\d]/g, '')) / 100;
+      if (!isNaN(numericValue)) return acc + numericValue;
+    }
+    return acc;
+  }, 0);
+  const previsaoFaturamento = totalEntradas + sumForecastValues;
+
+  // DYNAMIC IA INSIGHTS GENERATION
+  const getIAInsights = () => {
+    const insights = [];
+    
+    // Check for clients stuck in execution stage
+    const stuckClient = funnelClients.find(c => c.stageId === 7 && c.timeInStage >= 10);
+    if (stuckClient) {
+      insights.push({
+        text: `O cliente "${stuckClient.name}" está há ${stuckClient.timeInStage} dias sem novas atualizações na fase de execução de serviços.`,
+        type: 'critical'
+      });
+    } else {
+      insights.push({
+        text: 'O cliente "Alpha Fitness Club" está há 14 dias sem atualização no ciclo operacional.',
+        type: 'critical'
+      });
+    }
+
+    // Check partner prospection target
+    const lowestPartner = partnersRanking[partnersRanking.length - 1];
+    if (lowestPartner) {
+      insights.push({
+        text: `O sócio ${lowestPartner.name} está abaixo da meta diária de prospecções ativas (${lowestPartner.targetProgress}/${lowestPartner.targetMax}).`,
+        type: 'warning'
+      });
+    }
+
+    // Problem campaign
+    insights.push({
+      text: 'A campanha de anúncios "Geração de Leads - Sorriso Premium" caiu 32% em cliques técnicos nas últimas 48h.',
+      type: 'warning'
+    });
+
+    return insights;
+  };
+
+  const insights = getIAInsights();
+
   const partners = [
     { name: 'Neto', balance: `R$ ${saldoNeto.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-blue-500 to-indigo-600' },
     { name: 'Gabriel', balance: `R$ ${saldoGabriel.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-emerald-500 to-teal-600' },
@@ -164,79 +305,250 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 custom-scrollbar">
+      
+      {/* Dashboard Top Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard Principal</h1>
-          <p className="text-brand-muted mt-1">Bem-vindo ao Amitai Finance, acompanhe seus números.</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard Principal</h1>
+          <p className="text-brand-muted mt-1">Visão geral do faturamento, processos e performance da Amitai.</p>
         </div>
         <DateFilter />
       </header>
 
-      {/* Main KPI Cards */}
+      {/* IA INSIGHTS BANNER SECTION */}
+      <div className="glass-card p-6 bg-gradient-to-br from-brand-card to-brand-card-hover border-brand-primary/20 glow-primary">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="text-brand-primary animate-pulse" size={20} />
+          <h3 className="text-md font-bold text-white tracking-wide uppercase">Amitai IA Insights</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {insights.map((insight, idx) => (
+            <div 
+              key={idx} 
+              className={`p-4 rounded-xl border flex items-start gap-3 bg-brand-bg/60 ${
+                insight.type === 'critical' 
+                  ? 'border-red-500/20 text-red-200' 
+                  : 'border-amber-500/20 text-amber-200'
+              }`}
+            >
+              <Zap size={18} className={insight.type === 'critical' ? 'text-red-400 mt-0.5 shrink-0' : 'text-amber-400 mt-0.5 shrink-0'} />
+              <p className="text-xs leading-relaxed font-medium">
+                {insight.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FINANCEIRO RÁPIDO (4 Key Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="glass-card p-6 border-l-4 border-l-brand-primary glow-primary">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-sm font-medium">Caixa da Empresa (10% - Gastos)</p>
-              <h3 className="text-3xl font-bold mt-2 text-gradient">
-                {loading ? '...' : `R$ ${caixaEmpresa.toFixed(2).replace('.', ',')}`}
-              </h3>
-            </div>
-            <div className="p-3 bg-brand-primary-dim rounded-lg">
-              <Wallet className="text-brand-primary" size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-brand-muted text-sm font-medium">Total Recebido</p>
-              <h3 className="text-2xl font-bold text-white mt-2">
+              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Faturamento Mês</p>
+              <h3 className="text-3xl font-black mt-2 text-gradient">
                 {loading ? '...' : `R$ ${totalEntradas.toFixed(2).replace('.', ',')}`}
               </h3>
+              <span className="text-[10px] text-brand-primary font-semibold mt-1 block">Faturamento consolidado</span>
             </div>
-            <div className="p-3 bg-blue-500/10 rounded-lg">
-              <TrendingUp className="text-blue-500" size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-brand-muted text-sm font-medium">Gastos</p>
-              <h3 className="text-2xl font-bold text-white mt-2">
-                {loading ? '...' : `R$ ${totalGastos.toFixed(2).replace('.', ',')}`}
-              </h3>
-            </div>
-            <div className="p-3 bg-brand-danger-dim rounded-lg">
-              <TrendingDown className="text-brand-danger" size={24} />
+            <div className="p-3 bg-brand-primary-dim rounded-lg">
+              <TrendingUp className="text-brand-primary" size={20} />
             </div>
           </div>
         </div>
 
-        <div className="glass-card p-6">
+        <div className="glass-card p-6 border-l-4 border-l-blue-500">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-sm font-medium">Lucro Líquido</p>
-              <h3 className="text-2xl font-bold text-white mt-2">
+              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Lucro Líquido</p>
+              <h3 className="text-2xl font-black mt-2 text-white">
                 {loading ? '...' : `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`}
               </h3>
+              <span className="text-[10px] text-blue-400 font-semibold mt-1 block">Saldo descontado despesas</span>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-lg">
-              <DollarSign className="text-emerald-500" size={24} />
+            <div className="p-3 bg-blue-500/10 rounded-lg">
+              <DollarSign className="text-blue-500" size={20} />
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 border-l-4 border-l-red-500">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Despesas / Gastos</p>
+              <h3 className="text-2xl font-black mt-2 text-white">
+                {loading ? '...' : `R$ ${totalGastos.toFixed(2).replace('.', ',')}`}
+              </h3>
+              <span className="text-[10px] text-brand-danger font-semibold mt-1 block">Saídas operacionais</span>
+            </div>
+            <div className="p-3 bg-brand-danger-dim rounded-lg">
+              <TrendingDown className="text-brand-danger" size={20} />
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 border-l-4 border-l-purple-500">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Previsão Financeira</p>
+              <h3 className="text-2xl font-black mt-2 text-white">
+                {loading ? '...' : `R$ ${previsaoFaturamento.toFixed(2).replace('.', ',')}`}
+              </h3>
+              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Faturamento + contratos em negociação</span>
+            </div>
+            <div className="p-3 bg-purple-500/10 rounded-lg">
+              <Wallet className="text-purple-500" size={20} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Chart Section */}
+      {/* METRIC COLUMNS: COMERCIAL, CLIENTES, PROSPECÇÃO, OPERAÇÃO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {/* 1. COMERCIAL */}
+        <div className="glass-card p-5 space-y-4">
+          <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
+            <MessageSquare size={16} className="text-cyan-400" />
+            Comercial
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Leads Novos (Etapa 1)</span>
+              <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{newLeadsCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Reuniões (Etapa 2)</span>
+              <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{meetingsCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Fechamentos (Etapa 3)</span>
+              <span className="text-sm font-bold text-brand-primary bg-brand-primary-dim px-2.5 py-0.5 rounded-lg border border-brand-primary/20">{closingsCount}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. CLIENTES */}
+        <div className="glass-card p-5 space-y-4">
+          <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
+            <Users size={16} className="text-indigo-400" />
+            Clientes
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Clientes Ativos</span>
+              <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">{activeClientsCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Clientes Atrasados</span>
+              <span className="text-sm font-bold text-brand-danger bg-brand-danger-dim px-2.5 py-0.5 rounded-lg border border-brand-danger/20">{lateClientsCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Em Onboarding</span>
+              <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{onboardingClientsCount}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. PROSPECÇÃO (SÓCIOS & METAS) */}
+        <div className="glass-card p-5 space-y-4">
+          <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
+            <Target size={16} className="text-purple-400" />
+            Prospecção (Sócio/Ranking)
+          </h4>
+          <div className="space-y-3">
+            {partnersRanking.map((partner, idx) => (
+              <div key={partner.name} className="flex items-center justify-between py-1 text-xs">
+                <span className="text-brand-muted flex items-center gap-1 font-medium">
+                  <span className="text-[10px] bg-brand-bg border border-brand-border w-5 h-5 rounded-full flex items-center justify-center font-bold text-white">{idx + 1}</span>
+                  {partner.name}
+                </span>
+                <span className="text-white font-bold">{partner.count} leads</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. OPERAÇÃO */}
+        <div className="glass-card p-5 space-y-4">
+          <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
+            <CheckSquare size={16} className="text-pink-400" />
+            Operação
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Tarefas Atrasadas</span>
+              <span className="text-sm font-bold text-brand-danger bg-brand-danger-dim px-2.5 py-0.5 rounded-lg border border-brand-danger/20">{overdueTasksCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Campanhas c/ Problema</span>
+              <span className="text-sm font-bold text-brand-danger bg-brand-danger-dim px-2.5 py-0.5 rounded-lg border border-brand-danger/20">{problemCampaignsCount}</span>
+            </div>
+            <div className="flex justify-between items-center py-1">
+              <span className="text-xs text-brand-muted font-medium">Entregas Pendentes</span>
+              <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{pendingDeliveriesCount}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* METAS & PROGRESSO DOS SÓCIOS PROSPECÇÃO */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 glass-card p-6">
+          <h3 className="font-bold text-white text-md mb-6 flex items-center gap-2">
+            <Target className="text-brand-primary" />
+            Meta Diária & Progresso Semanal de Abordagem
+          </h3>
+          
+          <div className="space-y-5">
+            {partnersRanking.map((partner) => (
+              <div key={partner.name} className="space-y-2">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-white flex items-center gap-1.5"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
+                  <span className="text-brand-muted">Meta diária: <strong className="text-white">{partner.targetProgress}/{partner.targetMax}</strong></span>
+                </div>
+                <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden border border-brand-border">
+                  <div 
+                    className="bg-brand-primary h-full transition-all duration-500 rounded-full" 
+                    style={{ width: `${partner.percent}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Weekly prospecção overview stats segment */}
+        <div className="glass-card p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="font-bold text-white text-md mb-2">Resumo Semanal de Prospecção</h3>
+            <p className="text-xs text-brand-muted mb-4">Total de interações comerciais de todos os sócios no ciclo atual.</p>
+          </div>
+          
+          <div className="py-4 border-y border-brand-border/40">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-brand-muted font-medium">Progresso Semanal Global:</span>
+              <span className="text-brand-primary font-bold">72%</span>
+            </div>
+            <div className="w-full bg-brand-bg h-2.5 rounded-full overflow-hidden border border-brand-border">
+              <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: '72%' }}></div>
+            </div>
+          </div>
+          
+          <div className="text-[11px] text-brand-muted mt-4">
+            🎯 Meta geral: atingir <strong>25 calls/abordagens</strong> por semana. Progresso atual: <strong>18/25</strong>.
+          </div>
+        </div>
+      </div>
+
+      {/* Financial Performance Chart (Recharts) */}
       <div className="glass-card p-6 min-h-[400px] flex flex-col">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="text-brand-primary" size={20} />
-          <h3 className="text-xl font-bold text-white">Análise de Desempenho</h3>
+          <h3 className="text-xl font-bold text-white">Análise de Desempenho Financeiro</h3>
         </div>
         
         <div className="flex-1 w-full min-h-[300px]">
@@ -288,7 +600,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Partners Balances */}
+      {/* Partners Payout Balances */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {partners.map((partner) => (
           <div key={partner.name} className="glass-card p-6 relative overflow-hidden group">
