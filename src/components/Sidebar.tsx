@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PlusCircle, MinusCircle, History, CalendarCheck, LogOut, Workflow, Layers } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, MinusCircle, History, CalendarCheck, LogOut, Workflow, Layers, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { name: 'Fechamento', href: '/fechamento', icon: CalendarCheck },
   { name: 'Processos', href: '/processos', icon: Workflow },
   { name: 'Funil de Vendas', href: '/funil', icon: Layers },
+  { name: 'Clientes', href: '/clientes', icon: Users },
 ];
 
 export default function Sidebar() {
