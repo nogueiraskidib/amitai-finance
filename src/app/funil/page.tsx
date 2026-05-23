@@ -7,7 +7,6 @@ import {
   TrendingUp, 
   Clock, 
   Plus, 
-  Search, 
   Trash2, 
   Eye, 
   Calendar, 
@@ -24,15 +23,19 @@ import {
   AlertTriangle, 
   RefreshCw, 
   X, 
-  ArrowRight, 
   User, 
   MoreHorizontal,
+  CheckSquare,
+  Activity,
+  HeartHandshake,
+  Search,
   ChevronDown,
   ChevronUp,
   FileCheck,
-  CheckSquare,
-  Activity,
-  HeartHandshake
+  PlusCircle,
+  ShieldAlert,
+  Sparkles,
+  Info
 } from 'lucide-react';
 
 // Type definitions
@@ -42,84 +45,93 @@ interface LogItem {
   user: string;
 }
 
+interface ServiceTask {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+interface ClientService {
+  id: string;
+  name: string; // e.g. "Gestão de tráfego", "Criação de site", "Social media", "Branding", "Automações"
+  responsible: string;
+  status: 'Planejado' | 'Em andamento' | 'Crítico' | 'Concluído';
+  progress: number; // 0 to 100
+  tasks: ServiceTask[];
+  deadline: string;
+  deliveries: string;
+  observations: string;
+  files: { id: string; name: string; url: string }[];
+}
+
+interface GeneralTask {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 interface Client {
   id: string;
   name: string;
   stageId: number; // 1 to 12
   timeInStage: number; // in days
   status: string; // e.g. "Em andamento", "Pendente", "Concluído", "Crítico"
-  tasks: { id: string; text: string; completed: boolean }[];
+  tasks: GeneralTask[];
   history: LogItem[];
   createdAt: string;
   lastUpdated: string;
   
-  // Custom fields by stage
-  // Stage 1
-  origin?: string;
+  // TAB 1: PERFIL DO CLIENTE
+  niche?: string;
   responsible?: string;
+  servicesContracted?: string; // Quick text summary of contracted services
+  contractDuration?: string; // Tempo de contrato
+  observations?: string; // Observações gerais
+  importantInfo?: string; // Informações importantes
+
+  // TAB 2: DOSSIÊ (Estudo estratégico)
+  targetAudience?: string;
+  pains?: string;
+  objections?: string;
+  differentials?: string;
+  toneOfVoice?: string;
+  positioning?: string;
+  competitors?: string;
+  objectives?: string;
+  offers?: string;
+  previousStrategies?: string;
+  briefingComplete?: boolean;
+  strategicObservations?: string;
+
+  // TAB 3: SERVIÇOS ATIVOS
+  servicesList: ClientService[];
+
+  // TAB 4: OPERACIONAL
+  internalResponsibles?: string; // Responsáveis internos (Neto, Gabriel, Manu)
+  generalTasks: GeneralTask[];
+  priority?: 'Baixa' | 'Média' | 'Alta';
+  pendingIssues?: string; // Pendências
+  calendarDate?: string; // Calendário
+  operationalProgress?: string; // Andamento operacional
+  internalObservations?: string; // Observações internas
+
+  // Legacy field support for stage conversion
+  origin?: string;
   contactDate?: string;
   conversationStatus?: string;
-  observations?: string;
-
-  // Stage 2
   meetingDate?: string;
   meetingTime?: string;
   meetingLink?: string;
   bookingStatus?: string;
-
-  // Stage 3
   proposalSent?: boolean;
   contractValue?: string;
-  objections?: string;
-  negotiationStatus?: string;
   forecastDate?: string;
-
-  // Stage 4
   contractName?: string;
   signatureStatus?: string;
   sendDate?: string;
-
-  // Stage 5
-  assetsChecklist?: { id: string; text: string; completed: boolean }[];
-
-  // Stage 6
-  niche?: string;
-  targetAudience?: string;
-  pains?: string;
-  competitors?: string;
-  differentials?: string;
-  toneOfVoice?: string;
-  strategies?: string;
-  briefingComplete?: boolean;
-
-  // Stage 7
-  activeServices?: string;
-  operationalChecklist?: { id: string; text: string; completed: boolean }[];
-  deadline?: string;
   progress?: number;
-
-  // Stage 8
   requests?: string;
-  priority?: 'Baixa' | 'Média' | 'Alta';
-
-  // Stage 9
-  deliveries?: string;
-  results?: string;
-  feedback?: string;
-  retentionStrategy?: string;
-  upsellPossibility?: string;
-
-  // Stage 10
-  reportName?: string;
-  metrics?: string;
-  improvements?: string;
-  deliveryDate?: string;
-
-  // Stage 11
-  cancelReason?: string;
-  cancelFeedback?: string;
-  errorsIdentified?: string;
-  improvementSuggestions?: string;
+  priorityLevel?: string;
 }
 
 // Stage definitions
@@ -138,7 +150,7 @@ const STAGES = [
   { id: 12, name: 'Renovação de Contrato', desc: 'Fim do ciclo contratual e preparo de renovação', color: 'border-l-4 border-teal-400', badgeColor: 'bg-teal-500/10 text-teal-400', icon: RefreshCw }
 ];
 
-// Helper component for lucide MessageSquare
+// Helper icon
 function MessageSquareIcon(props: any) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -147,7 +159,6 @@ function MessageSquareIcon(props: any) {
   );
 }
 
-// Default Seed Data
 const DEFAULT_CLIENTS: Client[] = [];
 
 export default function FunilVendas() {
@@ -158,13 +169,26 @@ export default function FunilVendas() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
+  // Tab selected inside Client Details Modal (perfil, dossie, servicos, operacional, historico)
+  const [modalActiveTab, setModalActiveTab] = useState<'perfil' | 'dossie' | 'servicos' | 'operacional' | 'historico'>('perfil');
+
+  // Service expand/collapse inside Serviços tab
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
+
+  // Form State inside Serviços tab (adding a new service)
+  const [newServiceName, setNewServiceName] = useState('Gestão de tráfego');
+  const [newServiceResponsible, setNewServiceResponsible] = useState('Neto');
+  
+  // Form State for manual Timeline logs
+  const [manualLogText, setManualLogText] = useState('');
+
   // Add Lead Form State
   const [newClientName, setNewClientName] = useState('');
   const [newClientStage, setNewClientStage] = useState(1);
   const [newClientResponsible, setNewClientResponsible] = useState('Neto');
   const [newClientStatus, setNewClientStatus] = useState('Em andamento');
 
-  // Load and save state from/to localStorage
+  // Load and save state
   useEffect(() => {
     const saved = localStorage.getItem('amitai-funil-v1');
     if (saved) {
@@ -184,7 +208,7 @@ export default function FunilVendas() {
     localStorage.setItem('amitai-funil-v1', JSON.stringify(updatedClients));
   };
 
-  // Drag and Drop implementation
+  // Drag and Drop
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('text/plain', id);
   };
@@ -201,14 +225,13 @@ export default function FunilVendas() {
     const currentClient = clients.find(c => c.id === id);
     if (!currentClient || currentClient.stageId === targetStageId) return;
 
-    // Log the move
     const timestamp = new Date().toLocaleString('pt-BR', { hour12: false }).replace(',', '');
     const sourceStage = STAGES.find(s => s.id === currentClient.stageId)?.name || 'Desconhecida';
     const targetStage = STAGES.find(s => s.id === targetStageId)?.name || 'Desconhecida';
     
     const newLog: LogItem = {
       timestamp,
-      action: `Movido de "${sourceStage}" para "${targetStage}"`,
+      action: `Etapa do Funil alterada de "${sourceStage}" para "${targetStage}"`,
       user: currentClient.responsible || 'Sistema'
     };
 
@@ -217,7 +240,7 @@ export default function FunilVendas() {
         return {
           ...c,
           stageId: targetStageId,
-          timeInStage: 0, // Reset days when entering a new stage
+          timeInStage: 0,
           history: [newLog, ...c.history],
           lastUpdated: new Date().toISOString().split('T')[0]
         };
@@ -244,26 +267,20 @@ export default function FunilVendas() {
       status: newClientStatus,
       responsible: newClientResponsible,
       tasks: [],
+      generalTasks: [],
+      servicesList: [],
       history: [
         { timestamp, action: `Cliente criado na etapa "${initialStageName}"`, user: newClientResponsible }
       ],
       createdAt: new Date().toISOString().split('T')[0],
       lastUpdated: new Date().toISOString().split('T')[0],
       
-      // Default checklists for relevant stages
-      assetsChecklist: newClientStage === 5 ? [
-        { id: 'a1', text: 'Criação de Contas', completed: false },
-        { id: 'a2', text: 'Acessos Compartilhados', completed: false },
-        { id: 'a3', text: 'Estruturação de Contas', completed: false },
-        { id: 'a4', text: 'Landing Pages', completed: false },
-        { id: 'a5', text: 'Pixels de Rastreamento', completed: false },
-        { id: 'a6', text: 'Instalação de Domínios', completed: false }
-      ] : undefined,
-      operationalChecklist: newClientStage === 7 ? [
-        { id: 'op1', text: 'Planejar primeiro mês', completed: false },
-        { id: 'op2', text: 'Alinhamento com cliente', completed: false },
-        { id: 'op3', text: 'Entregar primeiros criativos/anúncios', completed: false }
-      ] : undefined
+      // Default empty profiles
+      niche: '',
+      contractDuration: '',
+      observations: '',
+      importantInfo: '',
+      priority: 'Média'
     };
 
     const updated = [newClient, ...clients];
@@ -278,7 +295,7 @@ export default function FunilVendas() {
 
   // Delete Client
   const handleDeleteClient = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este lead/cliente do funil?')) {
+    if (confirm('Tem certeza que deseja excluir este lead/cliente permanentemente do funil?')) {
       const updated = clients.filter(c => c.id !== id);
       saveState(updated);
       setIsModalOpen(false);
@@ -297,10 +314,14 @@ export default function FunilVendas() {
           lastUpdated: new Date().toISOString().split('T')[0]
         };
 
-        // Add history log if modifying important field
-        if (field === 'status' || field === 'responsible' || field === 'contractValue') {
+        if (field === 'status' || field === 'responsible' || field === 'stageId') {
+          const fieldNameMap: { [key: string]: string } = {
+            status: 'Status Geral',
+            responsible: 'Responsável',
+            stageId: 'Etapa do Funil'
+          };
           updatedObj.history = [
-            { timestamp, action: `Campo "${String(field)}" atualizado para: ${value}`, user: c.responsible || 'Sistema' },
+            { timestamp, action: `Campo "${fieldNameMap[String(field)] || String(field)}" atualizado para: ${value}`, user: c.responsible || 'Sistema' },
             ...c.history
           ];
         }
@@ -311,64 +332,38 @@ export default function FunilVendas() {
     });
 
     saveState(updated);
-    // Sync active client preview
     const syncClient = updated.find(c => c.id === id);
     if (syncClient) setSelectedClient(syncClient);
   };
 
-  // Custom asset checklist change
-  const handleAssetCheck = (clientId: string, assetId: string, completed: boolean) => {
+  // Add Manual Log to Timeline History
+  const handleAddManualLog = (clientId: string) => {
+    if (!manualLogText.trim()) return;
     const client = clients.find(c => c.id === clientId);
-    if (!client || !client.assetsChecklist) return;
+    if (!client) return;
 
-    const newChecklist = client.assetsChecklist.map(a => a.id === assetId ? { ...a, completed } : a);
-    updateClientField(clientId, 'assetsChecklist', newChecklist);
-  };
-
-  // Custom operational checklist change
-  const handleOperationalCheck = (clientId: string, taskId: string, completed: boolean) => {
-    const client = clients.find(c => c.id === clientId);
-    if (!client || !client.operationalChecklist) return;
-
-    const newChecklist = client.operationalChecklist.map(a => a.id === taskId ? { ...a, completed } : a);
-    
-    // Calculate new progress dynamically
-    const completedCount = newChecklist.filter(item => item.completed).length;
-    const totalCount = newChecklist.length;
-    const progressPercentage = Math.round((completedCount / totalCount) * 100);
+    const timestamp = new Date().toLocaleString('pt-BR', { hour12: false }).replace(',', '');
+    const newLog: LogItem = {
+      timestamp,
+      action: manualLogText,
+      user: client.responsible || 'Sistema'
+    };
 
     const updated = clients.map(c => {
       if (c.id === clientId) {
         return {
           ...c,
-          operationalChecklist: newChecklist,
-          progress: progressPercentage,
+          history: [newLog, ...c.history],
           lastUpdated: new Date().toISOString().split('T')[0]
         };
       }
       return c;
     });
+
     saveState(updated);
     const syncClient = updated.find(c => c.id === clientId);
     if (syncClient) setSelectedClient(syncClient);
-  };
-
-  // Core task checklist management (General Tasks)
-  const handleTaskToggle = (clientId: string, taskId: string, completed: boolean) => {
-    const client = clients.find(c => c.id === clientId);
-    if (!client) return;
-
-    const newTasks = client.tasks.map(t => t.id === taskId ? { ...t, completed } : t);
-    updateClientField(clientId, 'tasks', newTasks);
-  };
-
-  const handleAddTask = (clientId: string, taskText: string) => {
-    if (!taskText.trim()) return;
-    const client = clients.find(c => c.id === clientId);
-    if (!client) return;
-
-    const newTasks = [...client.tasks, { id: 't_' + Date.now(), text: taskText, completed: false }];
-    updateClientField(clientId, 'tasks', newTasks);
+    setManualLogText('');
   };
 
   // RENEWAL PROCESS: Stage 12 -> Returns to Stage 4!
@@ -376,7 +371,7 @@ export default function FunilVendas() {
     const timestamp = new Date().toLocaleString('pt-BR', { hour12: false }).replace(',', '');
     const log1: LogItem = {
       timestamp,
-      action: 'CONTRATO RENOVADO! Reiniciando ciclo de assinatura.',
+      action: 'CONTRATO RENOVADO! Retornando o cliente para a Etapa 4 para novo ciclo contratual.',
       user: client.responsible || 'Sistema'
     };
 
@@ -397,14 +392,340 @@ export default function FunilVendas() {
     });
 
     saveState(updated);
-    alert(`Contrato de "${client.name}" renovado com sucesso! O cliente retornou automaticamente para a Etapa 4 (Fazer e enviar contrato).`);
+    alert(`Contrato de "${client.name}" renovado! O cliente retornou automaticamente para a Etapa 4.`);
     setIsModalOpen(false);
     setSelectedClient(null);
   };
 
+  // --- SERVIÇOS ACTIVE TAB HELPER FUNCTIONS ---
+  const handleAddService = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const newService: ClientService = {
+      id: 'srv_' + Date.now(),
+      name: newServiceName,
+      responsible: newServiceResponsible,
+      status: 'Planejado',
+      progress: 0,
+      tasks: [
+        { id: 'st_1', text: 'Definição de escopo', completed: false },
+        { id: 'st_2', text: 'Reunião de kickoff', completed: false }
+      ],
+      deadline: '',
+      deliveries: '',
+      observations: '',
+      files: []
+    };
+
+    const updatedServices = [...(client.servicesList || []), newService];
+    
+    // Auto-update quick summary tags
+    const namesSummary = updatedServices.map(s => s.name).join(', ');
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          servicesContracted: namesSummary,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+    setExpandedServiceId(newService.id);
+  };
+
+  const handleDeleteService = (clientId: string, serviceId: string) => {
+    if (!confirm('Deseja realmente remover este serviço contratado?')) return;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const updatedServices = client.servicesList.filter(s => s.id !== serviceId);
+    const namesSummary = updatedServices.map(s => s.name).join(', ');
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          servicesContracted: namesSummary,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+    setExpandedServiceId(null);
+  };
+
+  const handleUpdateServiceField = (clientId: string, serviceId: string, field: keyof ClientService, value: any) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          [field]: value
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+  // Service tasks / checklists toggles
+  const handleServiceTaskCheck = (clientId: string, serviceId: string, taskId: string, completed: boolean) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const service = client.servicesList.find(s => s.id === serviceId);
+    if (!service) return;
+
+    const updatedTasks = service.tasks.map(t => t.id === taskId ? { ...t, completed } : t);
+    
+    // Auto calculate progress percentage from checklist
+    const completedCount = updatedTasks.filter(item => item.completed).length;
+    const totalCount = updatedTasks.length;
+    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          tasks: updatedTasks,
+          progress: progressPercent
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+  const handleAddServiceTask = (clientId: string, serviceId: string, taskText: string) => {
+    if (!taskText.trim()) return;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const service = client.servicesList.find(s => s.id === serviceId);
+    if (!service) return;
+
+    const updatedTasks = [...service.tasks, { id: 'st_' + Date.now(), text: taskText, completed: false }];
+    
+    // Recalculate progress
+    const completedCount = updatedTasks.filter(item => item.completed).length;
+    const totalCount = updatedTasks.length;
+    const progressPercent = Math.round((completedCount / totalCount) * 100);
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          tasks: updatedTasks,
+          progress: progressPercent
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+  const handleDeleteServiceTask = (clientId: string, serviceId: string, taskId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const service = client.servicesList.find(s => s.id === serviceId);
+    if (!service) return;
+
+    const updatedTasks = service.tasks.filter(t => t.id !== taskId);
+    
+    // Recalculate progress
+    const completedCount = updatedTasks.filter(item => item.completed).length;
+    const totalCount = updatedTasks.length;
+    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          tasks: updatedTasks,
+          progress: progressPercent
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+  // Service related files list management
+  const handleAddServiceFile = (clientId: string, serviceId: string, fileName: string, fileUrl: string) => {
+    if (!fileName.trim()) return;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const service = client.servicesList.find(s => s.id === serviceId);
+    if (!service) return;
+
+    const updatedFiles = [...(service.files || []), { id: 'file_' + Date.now(), name: fileName, url: fileUrl || '#' }];
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          files: updatedFiles
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+  const handleDeleteServiceFile = (clientId: string, serviceId: string, fileId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const service = client.servicesList.find(s => s.id === serviceId);
+    if (!service) return;
+
+    const updatedFiles = service.files.filter(f => f.id !== fileId);
+
+    const updatedServices = client.servicesList.map(s => {
+      if (s.id === serviceId) {
+        return {
+          ...s,
+          files: updatedFiles
+        };
+      }
+      return s;
+    });
+
+    const updated = clients.map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          servicesList: updatedServices,
+          lastUpdated: new Date().toISOString().split('T')[0]
+        };
+      }
+      return c;
+    });
+
+    saveState(updated);
+    const syncClient = updated.find(c => c.id === clientId);
+    if (syncClient) setSelectedClient(syncClient);
+  };
+
+
+  // --- OPERACIONAL CHECKLIST & TASKS GENERAL ---
+  const handleGeneralTaskToggle = (clientId: string, taskId: string, completed: boolean) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const updatedTasks = (client.generalTasks || []).map(t => t.id === taskId ? { ...t, completed } : t);
+    updateClientField(clientId, 'generalTasks', updatedTasks);
+  };
+
+  const handleAddGeneralTask = (clientId: string, taskText: string) => {
+    if (!taskText.trim()) return;
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const updatedTasks = [...(client.generalTasks || []), { id: 'gt_' + Date.now(), text: taskText, completed: false }];
+    updateClientField(clientId, 'generalTasks', updatedTasks);
+  };
+
+  const handleDeleteGeneralTask = (clientId: string, taskId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    const updatedTasks = (client.generalTasks || []).filter(t => t.id !== taskId);
+    updateClientField(clientId, 'generalTasks', updatedTasks);
+  };
+
+
   // Filter clients by search query
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.niche?.toLowerCase().includes(search.toLowerCase()) ||
     c.responsible?.toLowerCase().includes(search.toLowerCase()) ||
     c.status.toLowerCase().includes(search.toLowerCase())
   );
@@ -413,7 +734,6 @@ export default function FunilVendas() {
   const getStageStats = (stageId: number) => {
     const count = clients.filter(c => c.stageId === stageId).length;
     
-    // Conversion rate based on the previous stage count
     let conversionRate = 100;
     if (stageId > 1) {
       const prevCount = clients.filter(c => c.stageId === stageId - 1).length;
@@ -424,7 +744,6 @@ export default function FunilVendas() {
       }
     }
 
-    // List of responsibles in this stage
     const stageClients = clients.filter(c => c.stageId === stageId);
     const responsibles = Array.from(new Set(stageClients.map(c => c.responsible).filter(Boolean)));
     const avgTime = stageClients.length > 0
@@ -547,12 +866,12 @@ export default function FunilVendas() {
                 <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-[150px]">
                   {stageClients.length === 0 ? (
                     <div className="h-28 flex flex-col items-center justify-center border border-dashed border-brand-border/40 rounded-xl text-center p-4">
-                      <p className="text-xs text-brand-muted/60">Arraste um lead ou clique em "Adicionar" para preencher esta etapa.</p>
+                      <p className="text-xs text-brand-muted/60">Arraste um lead ou clique em "Novo nesta Etapa" para adicionar.</p>
                     </div>
                   ) : (
                     stageClients.map(client => {
-                      const completedTasks = client.tasks.filter(t => t.completed).length;
-                      const totalTasks = client.tasks.length;
+                      const completedTasks = (client.generalTasks || []).filter(t => t.completed).length + (client.servicesList || []).reduce((acc, s) => acc + s.tasks.filter(t => t.completed).length, 0);
+                      const totalTasks = (client.generalTasks || []).length + (client.servicesList || []).reduce((acc, s) => acc + s.tasks.length, 0);
                       
                       return (
                         <div 
@@ -561,6 +880,7 @@ export default function FunilVendas() {
                           onDragStart={(e) => handleDragStart(e, client.id)}
                           onClick={() => {
                             setSelectedClient(client);
+                            setModalActiveTab('perfil'); // Reset modal active tab to first
                             setIsModalOpen(true);
                           }}
                           className="bg-brand-card border border-brand-border hover:border-brand-primary/30 rounded-xl p-4 cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-all duration-300 shadow-md group relative hover:shadow-brand-primary/5"
@@ -589,47 +909,24 @@ export default function FunilVendas() {
 
                           {/* Quick context info inside the card based on Stage */}
                           <div className="mt-3 pt-3 border-t border-brand-border/40 text-[11px] text-brand-muted space-y-1">
+                            {client.niche && (
+                              <div className="flex justify-between">
+                                <span>Nicho:</span>
+                                <span className="text-white truncate max-w-[120px]">{client.niche}</span>
+                              </div>
+                            )}
+
                             {client.responsible && (
                               <div className="flex justify-between">
                                 <span>Responsável:</span>
                                 <span className="text-white font-medium">{client.responsible}</span>
                               </div>
                             )}
-                            
-                            {/* Prospecção orig */}
-                            {client.stageId === 1 && client.origin && (
-                              <div className="flex justify-between">
-                                <span>Origem:</span>
-                                <span className="text-white">{client.origin}</span>
-                              </div>
-                            )}
 
-                            {/* Meeting details */}
-                            {client.stageId === 2 && client.meetingDate && (
+                            {client.servicesContracted && (
                               <div className="flex justify-between">
-                                <span>Call:</span>
-                                <span className="text-brand-primary font-medium">{client.meetingDate.split('-').reverse().join('/')} às {client.meetingTime}</span>
-                              </div>
-                            )}
-
-                            {/* Negotiation value */}
-                            {client.stageId === 3 && client.contractValue && (
-                              <div className="flex justify-between">
-                                <span>Valor:</span>
-                                <span className="text-emerald-400 font-bold">{client.contractValue}</span>
-                              </div>
-                            )}
-
-                            {/* Active execution progress */}
-                            {client.stageId === 7 && client.progress !== undefined && (
-                              <div className="mt-2">
-                                <div className="flex justify-between text-[10px] mb-1">
-                                  <span>Progresso operacional:</span>
-                                  <span className="text-brand-primary font-semibold">{client.progress}%</span>
-                                </div>
-                                <div className="w-full bg-brand-bg h-1.5 rounded-full overflow-hidden border border-brand-border">
-                                  <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: `${client.progress}%` }}></div>
-                                </div>
+                                <span>Serviços:</span>
+                                <span className="text-brand-primary truncate max-w-[120px]" title={client.servicesContracted}>{client.servicesContracted}</span>
                               </div>
                             )}
                           </div>
@@ -673,7 +970,6 @@ export default function FunilVendas() {
       {activeTab === 'cone' && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           
-          {/* The cone structure */}
           <div className="xl:col-span-2 glass-card p-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-6">
@@ -684,13 +980,10 @@ export default function FunilVendas() {
                 As etapas comerciais e operacionais afunilam conforme os clientes progridem. As primeiras etapas representam maior volume de leads abordados, enquanto as últimas refletem o fechamento qualificado e operacionalizado.
               </p>
               
-              {/* Cone visual segments stacked */}
               <div className="space-y-2 select-none">
                 {STAGES.map((stage, idx) => {
                   const stats = getStageStats(stage.id);
-                  // Calculate dynamic width. Etapa 1 is 100%, and each drops.
-                  // For a nice cone curve, we compute the percentage based on stage rank
-                  const baseWidth = 100 - (idx * 6.5); // Etapa 1 = 100%, Etapa 12 = 28%
+                  const baseWidth = 100 - (idx * 6.5);
                   const widthPercent = Math.max(baseWidth, 30);
                   
                   return (
@@ -698,23 +991,19 @@ export default function FunilVendas() {
                       key={stage.id} 
                       className="flex items-center justify-between group cursor-pointer"
                       onClick={() => {
-                        // Filter by this stage
                         setSearch(stage.name);
                         setActiveTab('board');
                       }}
                     >
-                      {/* Name of stage on the left */}
                       <span className="w-48 text-xs font-semibold text-brand-muted group-hover:text-brand-primary transition-colors truncate pr-2">
                         {stage.id}ª. {stage.name}
                       </span>
                       
-                      {/* Funnel Segment representation */}
                       <div className="flex-1 flex justify-center">
                         <div 
-                          className={`py-2.5 px-4 bg-brand-card hover:bg-brand-card-hover border border-brand-border rounded-xl transition-all duration-300 relative group-hover:border-brand-primary/30 flex justify-between items-center text-xs font-medium`}
+                          className="py-2.5 px-4 bg-brand-card hover:bg-brand-card-hover border border-brand-border rounded-xl transition-all duration-300 relative group-hover:border-brand-primary/30 flex justify-between items-center text-xs font-medium"
                           style={{ width: `${widthPercent}%` }}
                         >
-                          {/* Segment line background highlight */}
                           <div className={`absolute top-0 left-0 bottom-0 w-1 ${stage.color.split(' ')[0]} rounded-l-xl`}></div>
                           
                           <span className="text-white font-semibold flex items-center gap-1.5">
@@ -722,7 +1011,6 @@ export default function FunilVendas() {
                             <span>{stats.count} {stats.count === 1 ? 'cliente' : 'clientes'}</span>
                           </span>
                           
-                          {/* Conversion metric on funnel segment */}
                           <span className="text-[10px] text-brand-primary font-bold">
                             {idx > 0 ? `▲ ${stats.conversionRate}%` : 'Entrada'}
                           </span>
@@ -735,10 +1023,8 @@ export default function FunilVendas() {
             </div>
           </div>
 
-          {/* Sidebar stats & indicators */}
           <div className="space-y-6">
             
-            {/* Quick Metrics */}
             <div className="glass-card p-6">
               <h3 className="font-bold text-white text-md mb-4 flex items-center gap-2">
                 <Activity className="text-brand-primary" />
@@ -772,7 +1058,6 @@ export default function FunilVendas() {
               </div>
             </div>
 
-            {/* Stage Quick Help list */}
             <div className="glass-card p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
               <h3 className="font-bold text-white text-md mb-4 flex items-center gap-2">
                 <Layers className="text-brand-primary" />
@@ -795,705 +1080,847 @@ export default function FunilVendas() {
         </div>
       )}
 
-      {/* RENDER MODAL: EDIT LEAD DETAILS */}
+      {/* RENDER MODAL: EDIT LEAD DETAILS - REDESIGNED WITH 5 TABS! */}
       {isModalOpen && selectedClient && (
         <div className="fixed inset-0 bg-brand-bg/85 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-brand-card border border-brand-border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-300">
             
             {/* Modal Header */}
-            <div className="p-6 border-b border-brand-border bg-brand-card/90 flex justify-between items-center sticky top-0 z-10">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg bg-brand-primary-dim text-brand-primary`}>
-                  <Users size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-brand-primary font-bold">Cliente ID: #{selectedClient.id}</span>
-                    <span className="text-xs text-brand-muted">• Criado em {selectedClient.createdAt.split('-').reverse().join('/')}</span>
+            <div className="p-6 border-b border-brand-border bg-brand-card/90 flex flex-col gap-4 sticky top-0 z-10">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-brand-primary-dim text-brand-primary">
+                    <Users size={22} />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mt-0.5">{selectedClient.name}</h2>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-brand-primary font-bold">Cliente: #{selectedClient.id}</span>
+                      <span className="text-xs text-brand-muted">• Atualizado em {selectedClient.lastUpdated.split('-').reverse().join('/')}</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mt-0.5">{selectedClient.name}</h2>
+                  </div>
                 </div>
+                <button 
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSelectedClient(null);
+                  }}
+                  className="text-brand-muted hover:text-white p-1.5 rounded-lg hover:bg-brand-card-hover transition-colors cursor-pointer"
+                >
+                  <X size={24} />
+                </button>
               </div>
-              <button 
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setSelectedClient(null);
-                }}
-                className="text-brand-muted hover:text-white p-1 rounded-lg hover:bg-brand-card-hover transition-colors cursor-pointer"
-              >
-                <X size={24} />
-              </button>
+
+              {/* 5 INTERNAL TABS NAVIGATION */}
+              <div className="flex overflow-x-auto gap-2 p-1 bg-brand-bg border border-brand-border/80 rounded-xl custom-scrollbar">
+                {[
+                  { id: 'perfil', name: 'Perfil do Cliente', icon: User },
+                  { id: 'dossie', name: 'Dossiê Estratégico', icon: Briefcase },
+                  { id: 'servicos', name: 'Serviços Ativos', icon: FolderPlus },
+                  { id: 'operacional', name: 'Operacional', icon: Play },
+                  { id: 'historico', name: 'Histórico & Timeline', icon: Activity }
+                ].map(tab => {
+                  const IconComponent = tab.icon;
+                  const isActive = modalActiveTab === tab.id;
+                  
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setModalActiveTab(tab.id as any)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer ${
+                        isActive 
+                          ? 'bg-brand-primary-dim text-brand-primary shadow-inner border border-brand-primary/20' 
+                          : 'text-brand-muted hover:text-white hover:bg-brand-card-hover border border-transparent'
+                      }`}
+                    >
+                      <IconComponent size={14} />
+                      {tab.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-8 flex-1">
+            {/* Modal Content container depending on active tab */}
+            <div className="p-6 space-y-6 flex-1">
               
-              {/* Top Controls Grid: Stage and Status */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/50 p-4 rounded-xl border border-brand-border/60">
-                <div>
-                  <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Etapa do Funil</label>
-                  <select 
-                    value={selectedClient.stageId}
-                    onChange={(e) => {
-                      const targetStageId = Number(e.target.value);
-                      const currentClient = selectedClient;
-                      const sourceStage = STAGES.find(s => s.id === currentClient.stageId)?.name || 'Desconhecida';
-                      const targetStage = STAGES.find(s => s.id === targetStageId)?.name || 'Desconhecida';
-                      const timestamp = new Date().toLocaleString('pt-BR', { hour12: false }).replace(',', '');
-                      const newLog = {
-                        timestamp,
-                        action: `Etapa alterada manualmente no painel para "${targetStage}"`,
-                        user: currentClient.responsible || 'Sistema'
-                      };
-                      
-                      const updated = clients.map(c => {
-                        if (c.id === currentClient.id) {
-                          return {
-                            ...c,
-                            stageId: targetStageId,
-                            timeInStage: 0,
-                            history: [newLog, ...c.history],
-                            lastUpdated: new Date().toISOString().split('T')[0]
-                          };
-                        }
-                        return c;
-                      });
-                      saveState(updated);
-                      const sync = updated.find(c => c.id === currentClient.id);
-                      if (sync) setSelectedClient(sync);
-                    }}
-                    className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
-                  >
-                    {STAGES.map(s => (
-                      <option key={s.id} value={s.id}>{s.id}. {s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Status Geral</label>
-                  <select 
-                    value={selectedClient.status}
-                    onChange={(e) => updateClientField(selectedClient.id, 'status', e.target.value)}
-                    className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
-                  >
-                    <option value="Em andamento">🟢 Em andamento</option>
-                    <option value="Concluído">🔵 Concluído</option>
-                    <option value="Pendente">🟡 Pendente</option>
-                    <option value="Crítico">🔴 Crítico</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Responsável Principal</label>
-                  <select 
-                    value={selectedClient.responsible || 'Neto'}
-                    onChange={(e) => updateClientField(selectedClient.id, 'responsible', e.target.value)}
-                    className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
-                  >
-                    <option value="Neto">Neto (Tecnologia/Infra)</option>
-                    <option value="Gabriel">Gabriel (Prospecção/LinkedIn)</option>
-                    <option value="Manu">Manu (Prospecção/Whats/Suporte)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* RENDER STAGE-SPECIFIC CUSTOM FIELDS */}
-              <div className="glass-card p-6 bg-brand-card/60 relative">
-                <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-brand-primary rounded-l-xl"></div>
-                <h3 className="font-extrabold text-white text-md mb-6 uppercase tracking-wider flex items-center gap-2">
-                  <Activity size={18} className="text-brand-primary" />
-                  Informações da Etapa Atual: {STAGES.find(s => s.id === selectedClient.stageId)?.name}
-                </h3>
-                
-                {/* 1ª ETAPA — RESPOSTA À PROSPECÇÃO */}
-                {selectedClient.stageId === 1 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              {/* TAB 1: PERFIL DO CLIENTE */}
+              {modalActiveTab === 'perfil' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Origem da Prospecção</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nome da Empresa</label>
                       <input 
                         type="text" 
-                        value={selectedClient.origin || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'origin', e.target.value)}
-                        placeholder="Ex: WhatsApp, LinkedIn, Instagram..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
+                        value={selectedClient.name} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'name', e.target.value)}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Data do Primeiro Contato</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.contactDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'contactDate', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Status da Conversa</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.conversationStatus || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'conversationStatus', e.target.value)}
-                        placeholder="Ex: Respondeu positivamente, solicitou portfólio comercial..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 2ª ETAPA — FECHAR REUNIÃO */}
-                {selectedClient.stageId === 2 && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Data da Reunião</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.meetingDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'meetingDate', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Horário da Call</label>
-                      <input 
-                        type="time" 
-                        value={selectedClient.meetingTime || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'meetingTime', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Status do Agendamento</label>
-                      <select 
-                        value={selectedClient.bookingStatus || 'Aguardando confirmação'} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'bookingStatus', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      >
-                        <option value="Aguardando confirmação">Aguardando confirmação</option>
-                        <option value="Confirmada">Confirmada no Calendário</option>
-                        <option value="Cancelada/Reagendar">Cancelada / Reagendar</option>
-                      </select>
-                    </div>
-                    <div className="md:col-span-3">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Link da Reunião (Google Meet / Zoom)</label>
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={selectedClient.meetingLink || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'meetingLink', e.target.value)}
-                          placeholder="https://meet.google.com/..."
-                          className="flex-1 bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
-                        />
-                        {selectedClient.meetingLink && (
-                          <a 
-                            href={selectedClient.meetingLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg py-2 px-4 rounded-xl flex items-center justify-center font-bold text-xs"
-                          >
-                            <LinkIcon size={14} /> Abrir Call
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3ª ETAPA — FECHAR CLIENTE */}
-                {selectedClient.stageId === 3 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Valor Proposto do Contrato (Mensal)</label>
-                      <div className="relative">
-                        <DollarSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted" />
-                        <input 
-                          type="text" 
-                          value={selectedClient.contractValue || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'contractValue', e.target.value)}
-                          placeholder="R$ 5.000,00"
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 pl-9 pr-3 text-white focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Previsão de Fechamento</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.forecastDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'forecastDate', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Proposta Enviada?</label>
-                      <select 
-                        value={selectedClient.proposalSent ? 'Sim' : 'Não'} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'proposalSent', e.target.value === 'Sim')}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      >
-                        <option value="Não">Não</option>
-                        <option value="Sim">Sim, proposta em PDF enviada</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Objeções Levantadas pelo Lead</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.objections || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'objections', e.target.value)}
-                        placeholder="Ex: Acharam caro, pediram desconto no setup..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 4ª ETAPA — FAZER E ENVIAR CONTRATO */}
-                {selectedClient.stageId === 4 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Nome do Contrato / Documento</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.contractName || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'contractName', e.target.value)}
-                        placeholder="Ex: Contrato de Prestação de Serviços Amitai - 6 meses"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Status da Assinatura</label>
-                      <select 
-                        value={selectedClient.signatureStatus || 'Aguardando Assinatura'} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'signatureStatus', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      >
-                        <option value="Pendente Preparação">Pendente Preparação</option>
-                        <option value="Aguardando Assinatura">Aguardando Assinatura</option>
-                        <option value="Assinado">Assinado e Arquivado</option>
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Data de Envio do Contrato</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.sendDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'sendDate', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 5ª ETAPA — CRIAR ATIVOS */}
-                {selectedClient.stageId === 5 && (
-                  <div className="space-y-4 text-sm">
-                    <label className="block text-xs font-bold text-brand-muted uppercase">Checklist de Ativos Obrigatórios</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
-                      {selectedClient.assetsChecklist?.map(asset => (
-                        <div key={asset.id} className="flex items-center gap-3 py-1">
-                          <input 
-                            type="checkbox"
-                            checked={asset.completed}
-                            onChange={(e) => handleAssetCheck(selectedClient.id, asset.id, e.target.checked)}
-                            className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                          />
-                          <span className={`${asset.completed ? 'line-through text-brand-muted' : 'text-white'} text-xs font-medium`}>
-                            {asset.text}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 6ª ETAPA — ESTUDO DO CLIENTE */}
-                {selectedClient.stageId === 6 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Nicho de Mercado</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nicho de Mercado</label>
                       <input 
                         type="text" 
                         value={selectedClient.niche || ''} 
                         onChange={(e) => updateClientField(selectedClient.id, 'niche', e.target.value)}
-                        placeholder="Ex: Odontologia Estética, E-commerce de Jóias"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
+                        placeholder="Ex: Clínicas, E-commerce, Logística"
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Público-Alvo</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.targetAudience || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
-                        placeholder="Mulheres de 25-45 anos interessadas em autocuidado"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Concorrentes Principais</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.competitors || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'competitors', e.target.value)}
-                        placeholder="Empresa X, Marca Y"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Diferenciais Operacionais</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.differentials || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
-                        placeholder="Suporte humanizado rápido, atendimento premium"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Dores principais do cliente</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.pains || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
-                        placeholder="Falta de constância no WhatsApp, leads desqualificados"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Breve Planejamento de Estratégia de Mkt</label>
-                      <textarea 
-                        value={selectedClient.strategies || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'strategies', e.target.value)}
-                        placeholder="Subir funil de anúncios segmentados focando nas dores, automatizar respostas no direct..."
-                        rows={3}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
-                      />
-                    </div>
-                    <div className="md:col-span-2 flex items-center gap-3">
-                      <input 
-                        type="checkbox"
-                        checked={selectedClient.briefingComplete || false}
-                        onChange={(e) => updateClientField(selectedClient.id, 'briefingComplete', e.target.checked)}
-                        className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                      />
-                      <span className="text-xs font-semibold text-white">Dossiê e Briefing estratégico concluído?</span>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Responsável Comercial</label>
+                      <select 
+                        value={selectedClient.responsible || 'Neto'} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'responsible', e.target.value)}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      >
+                        <option value="Neto">Neto</option>
+                        <option value="Gabriel">Gabriel</option>
+                        <option value="Manu">Manu</option>
+                      </select>
                     </div>
                   </div>
-                )}
 
-                {/* 7ª ETAPA — EXECUÇÃO DOS SERVIÇOS */}
-                {selectedClient.stageId === 7 && (
-                  <div className="space-y-6 text-sm">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-medium text-brand-muted mb-1.5">Serviços Ativos Contratados</label>
-                        <input 
-                          type="text" 
-                          value={selectedClient.activeServices || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'activeServices', e.target.value)}
-                          placeholder="Ex: Tráfego Pago, Gestão de Instagram..."
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                        />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 space-y-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Serviços Contratados (Resumo)</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.servicesContracted || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'servicesContracted', e.target.value)}
+                            placeholder="Social Media, Branding, Tráfego"
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tempo de Contrato</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.contractDuration || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'contractDuration', e.target.value)}
+                            placeholder="Ex: 6 meses, Anual"
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-brand-muted mb-1.5">Prazo de Entrega do Ciclo Operacional</label>
-                        <input 
-                          type="date" 
-                          value={selectedClient.deadline || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'deadline', e.target.value)}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
+
+                      <div className="glass-card p-5">
+                        <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
+                          <Info size={14} className="text-brand-primary" /> Informações Importantes
+                        </label>
+                        <textarea 
+                          value={selectedClient.importantInfo || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'importantInfo', e.target.value)}
+                          placeholder="Adicione restrições, observações comerciais críticas, ou dados urgentes sobre faturamento e cobrança..."
+                          rows={4}
+                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="block text-xs font-bold text-brand-muted uppercase">Checklist Operacional de Atividades</label>
-                        <span className="text-xs text-brand-primary font-bold">{selectedClient.progress || 0}% Concluído</span>
+                    {/* Observations Sidebar */}
+                    <div className="glass-card p-5 flex flex-col justify-between">
+                      <div>
+                        <label className="block text-xs font-bold text-white uppercase mb-2">Observações Gerais</label>
+                        <textarea 
+                          value={selectedClient.observations || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
+                          placeholder="Notas operacionais gerais ou lembretes rápidos sobre o cliente..."
+                          rows={8}
+                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                        />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-brand-bg/40 p-4 rounded-xl border border-brand-border mb-3">
-                        {selectedClient.operationalChecklist?.map(opItem => (
-                          <div key={opItem.id} className="flex items-center gap-3 py-1">
-                            <input 
-                              type="checkbox"
-                              checked={opItem.completed}
-                              onChange={(e) => handleOperationalCheck(selectedClient.id, opItem.id, e.target.checked)}
-                              className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                            />
-                            <span className={`${opItem.completed ? 'line-through text-brand-muted font-normal' : 'text-white font-medium'} text-xs`}>
-                              {opItem.text}
-                            </span>
+                    </div>
+                  </div>
+
+                  {/* Stage Details quick sync settings */}
+                  <div className="p-4 bg-brand-bg/40 border border-brand-border rounded-xl text-xs space-y-3">
+                    <h4 className="font-bold text-white uppercase">Informações do Funil Comercial</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <span className="text-brand-muted block mb-0.5">Etapa no Funil:</span>
+                        <strong className="text-brand-primary">{STAGES.find(s => s.id === selectedClient.stageId)?.name}</strong>
+                      </div>
+                      <div>
+                        <span className="text-brand-muted block mb-0.5">Status do Lead:</span>
+                        <strong className="text-white">{selectedClient.status}</strong>
+                      </div>
+                      <div>
+                        <span className="text-brand-muted block mb-0.5">Criado em:</span>
+                        <strong className="text-white">{selectedClient.createdAt.split('-').reverse().join('/')}</strong>
+                      </div>
+                      <div>
+                        <span className="text-brand-muted block mb-0.5">Dias na etapa:</span>
+                        <strong className="text-white">{selectedClient.timeInStage} dias</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: DOSSIÊ (Estudo estratégico) */}
+              {modalActiveTab === 'dossie' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div className="space-y-4 md:col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Público-Alvo</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.targetAudience || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
+                            placeholder="Ex: Mulheres de 25-40 anos classe A"
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Concorrentes</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.competitors || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'competitors', e.target.value)}
+                            placeholder="Ex: Marca X, Concorrente Y"
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tom de Voz</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.toneOfVoice || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'toneOfVoice', e.target.value)}
+                            placeholder="Ex: Sério e autoritário, Descontraído..."
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Posicionamento da Marca</label>
+                          <input 
+                            type="text" 
+                            value={selectedClient.positioning || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'positioning', e.target.value)}
+                            placeholder="Ex: Líder em inovação, Mais acessível"
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Dores do Cliente</label>
+                          <textarea 
+                            value={selectedClient.pains || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
+                            placeholder="Falta de constância no WhatsApp, leads desqualificados..."
+                            rows={3}
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objeções de Vendas</label>
+                          <textarea 
+                            value={selectedClient.objections || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'objections', e.target.value)}
+                            placeholder="Acharam o setup inicial um pouco alto, dúvida de suporte..."
+                            rows={3}
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Diferenciais Operacionais</label>
+                          <textarea 
+                            value={selectedClient.differentials || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
+                            placeholder="Atendimento humanizado em menos de 10 min, suporte total do sócio..."
+                            rows={3}
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Ofertas</label>
+                          <textarea 
+                            value={selectedClient.offers || ''} 
+                            onChange={(e) => updateClientField(selectedClient.id, 'offers', e.target.value)}
+                            placeholder="Mentoria exclusiva grátis para fechamento imediato..."
+                            rows={3}
+                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Column 3: Briefing & Extra Info */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos Principais</label>
+                        <textarea 
+                          value={selectedClient.objectives || ''} 
+                          onChange={(e) => updateClientField(selectedClient.id, 'objectives', e.target.value)}
+                          placeholder="Aumentar faturamento em 30% no primeiro trimestre operacional..."
+                          rows={4}
+                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Estratégias Comerciais Anteriores</label>
+                        <textarea 
+                          value={selectedClient.previousStrategies || ''} 
+                          onChange={(e) => updateClientField(selectedClient.id, 'previousStrategies', e.target.value)}
+                          placeholder="Tentaram prospecção fria interna mas faltou constância..."
+                          rows={4}
+                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+
+                      <div className="glass-card p-4 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="checkbox"
+                            checked={selectedClient.briefingComplete || false}
+                            onChange={(e) => updateClientField(selectedClient.id, 'briefingComplete', e.target.checked)}
+                            className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
+                          />
+                          <span className="text-xs font-bold text-white">Briefing Estratégico Concluído?</span>
+                        </div>
+                        <p className="text-[10px] text-brand-muted leading-relaxed">
+                          Marque para sinalizar no painel que o dossiê básico de inteligência do cliente foi finalizado.
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div className="glass-card p-5">
+                    <label className="block text-xs font-bold text-white uppercase mb-2">Observações Estratégicas</label>
+                    <textarea 
+                      value={selectedClient.strategicObservations || ''} 
+                      onChange={(e) => updateClientField(selectedClient.id, 'strategicObservations', e.target.value)}
+                      placeholder="Adicione ideias estratégicas adicionais levantadas durante sessões de brainstorming da Amitai..."
+                      rows={3}
+                      className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: SERVIÇOS */}
+              {modalActiveTab === 'servicos' && (
+                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
+                  
+                  {/* Top Bar inside Services tab to add a Service */}
+                  <div className="bg-brand-bg/50 p-4 rounded-xl border border-brand-border flex flex-col sm:flex-row gap-4 items-center justify-between">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="flex flex-col gap-1 w-full sm:w-48">
+                        <label className="text-[10px] text-brand-muted uppercase font-bold">Serviço à Contratar</label>
+                        <select
+                          value={newServiceName}
+                          onChange={(e) => setNewServiceName(e.target.value)}
+                          className="bg-brand-card border border-brand-border rounded-lg py-1.5 px-2 text-white text-xs focus:outline-none"
+                        >
+                          <option value="Gestão de tráfego">Gestão de tráfego</option>
+                          <option value="Criação de site">Criação de site</option>
+                          <option value="Social media">Social media</option>
+                          <option value="Branding">Branding</option>
+                          <option value="Automações">Automações</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1 w-full sm:w-40">
+                        <label className="text-[10px] text-brand-muted uppercase font-bold">Responsável</label>
+                        <select
+                          value={newServiceResponsible}
+                          onChange={(e) => setNewServiceResponsible(e.target.value)}
+                          className="bg-brand-card border border-brand-border rounded-lg py-1.5 px-2 text-white text-xs focus:outline-none"
+                        >
+                          <option value="Neto">Neto</option>
+                          <option value="Gabriel">Gabriel</option>
+                          <option value="Manu">Manu</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleAddService(selectedClient.id)}
+                      className="w-full sm:w-auto bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2 px-5 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-colors shadow shadow-brand-primary/5"
+                    >
+                      <PlusCircle size={16} />
+                      Contratar Serviço
+                    </button>
+                  </div>
+
+                  {/* List of active contracted services */}
+                  <div className="space-y-4">
+                    {(!selectedClient.servicesList || selectedClient.servicesList.length === 0) ? (
+                      <div className="text-center p-12 border border-dashed border-brand-border/40 rounded-xl">
+                        <FolderPlus className="mx-auto text-brand-muted/40 mb-3" size={32} />
+                        <p className="text-brand-muted italic">Nenhum serviço contratado no momento. Use o seletor acima para adicionar.</p>
+                      </div>
+                    ) : (
+                      selectedClient.servicesList.map(service => {
+                        const isExpanded = expandedServiceId === service.id;
+                        
+                        return (
+                          <div 
+                            key={service.id} 
+                            className="bg-brand-card border border-brand-border rounded-xl transition-all duration-300"
+                          >
+                            {/* Service Header */}
+                            <div 
+                              onClick={() => setExpandedServiceId(isExpanded ? null : service.id)}
+                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-brand-card-hover transition-colors rounded-t-xl"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
+                                <span className={`w-3 h-3 rounded-full shrink-0 ${
+                                  service.status === 'Concluído' ? 'bg-emerald-400' :
+                                  service.status === 'Crítico' ? 'bg-red-400' :
+                                  service.status === 'Planejado' ? 'bg-amber-400' :
+                                  'bg-brand-primary'
+                                }`}></span>
+                                <h4 className="font-bold text-white text-sm truncate">{service.name}</h4>
+                                <span className="text-[10px] text-brand-muted">• por {service.responsible}</span>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                {/* Compact Progress indicator */}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-brand-primary font-bold">{service.progress}%</span>
+                                  <div className="w-16 bg-brand-bg h-1.5 rounded-full overflow-hidden border border-brand-border hidden sm:block">
+                                    <div className="bg-brand-primary h-full" style={{ width: `${service.progress}%` }}></div>
+                                  </div>
+                                </div>
+                                {isExpanded ? <ChevronUp size={16} className="text-brand-muted" /> : <ChevronDown size={16} className="text-brand-muted" />}
+                              </div>
+                            </div>
+
+                            {/* Service Body Details (Expanded View) */}
+                            {isExpanded && (
+                              <div className="p-4 border-t border-brand-border/60 bg-brand-card/30 space-y-6 animate-in slide-in-from-top-2 duration-300 rounded-b-xl">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                                  <div>
+                                    <label className="block text-[10px] font-semibold text-brand-muted uppercase mb-1">Responsável</label>
+                                    <select
+                                      value={service.responsible}
+                                      onChange={(e) => handleUpdateServiceField(selectedClient.id, service.id, 'responsible', e.target.value)}
+                                      className="w-full bg-brand-bg border border-brand-border rounded-lg py-1.5 px-2 text-white"
+                                    >
+                                      <option value="Neto">Neto</option>
+                                      <option value="Gabriel">Gabriel</option>
+                                      <option value="Manu">Manu</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[10px] font-semibold text-brand-muted uppercase mb-1">Status da Execução</label>
+                                    <select
+                                      value={service.status}
+                                      onChange={(e) => handleUpdateServiceField(selectedClient.id, service.id, 'status', e.target.value)}
+                                      className="w-full bg-brand-bg border border-brand-border rounded-lg py-1.5 px-2 text-white"
+                                    >
+                                      <option value="Planejado">🟡 Planejado</option>
+                                      <option value="Em andamento">🟢 Em andamento</option>
+                                      <option value="Crítico">🔴 Crítico</option>
+                                      <option value="Concluído">🔵 Concluído</option>
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[10px] font-semibold text-brand-muted uppercase mb-1">Prazo Final</label>
+                                    <input
+                                      type="date"
+                                      value={service.deadline || ''}
+                                      onChange={(e) => handleUpdateServiceField(selectedClient.id, service.id, 'deadline', e.target.value)}
+                                      className="w-full bg-brand-bg border border-brand-border rounded-lg py-1.5 px-2 text-white"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-end">
+                                    <button
+                                      onClick={() => handleDeleteService(selectedClient.id, service.id)}
+                                      className="w-full bg-brand-danger-dim hover:bg-brand-danger text-brand-danger hover:text-white py-1.5 px-3 rounded-lg font-bold transition-all border border-brand-danger/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Trash2 size={12} /> Remover Serviço
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Custom checklist for this service */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                      <label className="text-[10px] text-brand-muted uppercase font-bold">Checklist Operacional</label>
+                                      <span className="text-[10px] text-brand-primary font-bold">{service.progress}% feito</span>
+                                    </div>
+                                    
+                                    <div className="space-y-1.5 bg-brand-bg/50 p-3 rounded-xl border border-brand-border max-h-[140px] overflow-y-auto custom-scrollbar">
+                                      {service.tasks.length === 0 ? (
+                                        <p className="text-[10px] text-brand-muted italic">Nenhuma atividade operacional pendente.</p>
+                                      ) : (
+                                        service.tasks.map(sTask => (
+                                          <div key={sTask.id} className="flex items-center justify-between py-1 border-b border-brand-border/20 last:border-0">
+                                            <div className="flex items-center gap-2">
+                                              <input
+                                                type="checkbox"
+                                                checked={sTask.completed}
+                                                onChange={(e) => handleServiceTaskCheck(selectedClient.id, service.id, sTask.id, e.target.checked)}
+                                                className="w-3.5 h-3.5 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
+                                              />
+                                              <span className={`${sTask.completed ? 'line-through text-brand-muted' : 'text-white'} text-[11px]`}>
+                                                {sTask.text}
+                                              </span>
+                                            </div>
+                                            <button
+                                              onClick={() => handleDeleteServiceTask(selectedClient.id, service.id, sTask.id)}
+                                              className="text-brand-danger/60 hover:text-brand-danger p-0.5"
+                                            >
+                                              <Trash2 size={10} />
+                                            </button>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+
+                                    {/* Add Service Task Form */}
+                                    <form onSubmit={(e) => {
+                                      e.preventDefault();
+                                      const input = (e.target as any).sTaskInput;
+                                      handleAddServiceTask(selectedClient.id, service.id, input.value);
+                                      input.value = '';
+                                    }} className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        name="sTaskInput"
+                                        placeholder="Nova tarefa operacional..."
+                                        className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-[11px]"
+                                      />
+                                      <button 
+                                        type="submit"
+                                        className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Criar
+                                      </button>
+                                    </form>
+                                  </div>
+
+                                  {/* Service Files checklist tab */}
+                                  <div className="space-y-3">
+                                    <label className="text-[10px] text-brand-muted uppercase font-bold block">Arquivos & Links Relacionados</label>
+                                    
+                                    <div className="space-y-1.5 bg-brand-bg/50 p-3 rounded-xl border border-brand-border max-h-[140px] overflow-y-auto custom-scrollbar">
+                                      {(!service.files || service.files.length === 0) ? (
+                                        <p className="text-[10px] text-brand-muted italic">Nenhum arquivo ou link de briefing associado.</p>
+                                      ) : (
+                                        service.files.map(sFile => (
+                                          <div key={sFile.id} className="flex items-center justify-between py-1 border-b border-brand-border/20 last:border-0">
+                                            <a
+                                              href={sFile.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-brand-primary hover:text-brand-primary-hover flex items-center gap-1.5 text-[11px] truncate max-w-[180px]"
+                                            >
+                                              <LinkIcon size={10} />
+                                              {sFile.name}
+                                            </a>
+                                            <button
+                                              onClick={() => handleDeleteServiceFile(selectedClient.id, service.id, sFile.id)}
+                                              className="text-brand-danger/60 hover:text-brand-danger p-0.5 animate-in fade-in"
+                                            >
+                                              <Trash2 size={10} />
+                                            </button>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+
+                                    {/* Add File/Link Form */}
+                                    <form onSubmit={(e) => {
+                                      e.preventDefault();
+                                      const nameInput = (e.target as any).fileNameInput;
+                                      const urlInput = (e.target as any).fileUrlInput;
+                                      handleAddServiceFile(selectedClient.id, service.id, nameInput.value, urlInput.value);
+                                      nameInput.value = '';
+                                      urlInput.value = '';
+                                    }} className="flex gap-2 flex-col sm:flex-row">
+                                      <input
+                                        type="text"
+                                        name="fileNameInput"
+                                        required
+                                        placeholder="Nome do arquivo..."
+                                        className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-[11px]"
+                                      />
+                                      <input
+                                        type="text"
+                                        name="fileUrlInput"
+                                        placeholder="https://drive.google.com/..."
+                                        className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-[11px]"
+                                      />
+                                      <button 
+                                        type="submit"
+                                        className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                      >
+                                        Adicionar
+                                      </button>
+                                    </form>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-[10px] font-semibold text-brand-muted uppercase mb-1">Entregas Realizadas / Ativos Gerados</label>
+                                    <textarea
+                                      value={service.deliveries || ''}
+                                      onChange={(e) => handleUpdateServiceField(selectedClient.id, service.id, 'deliveries', e.target.value)}
+                                      placeholder="Ex: Landing Page de Lançamento criada e integrada, 12 anúncios publicados..."
+                                      rows={2}
+                                      className="w-full bg-brand-bg border border-brand-border rounded-lg py-1.5 px-2 text-white"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[10px] font-semibold text-brand-muted uppercase mb-1">Observações de Execução</label>
+                                    <textarea
+                                      value={service.observations || ''}
+                                      onChange={(e) => handleUpdateServiceField(selectedClient.id, service.id, 'observations', e.target.value)}
+                                      placeholder="Notas específicas sobre problemas na conta do tráfego ou alinhamento com design..."
+                                      rows={2}
+                                      className="w-full bg-brand-bg border border-brand-border rounded-lg py-1.5 px-2 text-white"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        );
+                      })
+                    )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* 8ª ETAPA — SUPORTE AO CLIENTE */}
-                {selectedClient.stageId === 8 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+              {/* TAB 4: OPERACIONAL */}
+              {modalActiveTab === 'operacional' && (
+                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Solicitação Pendente do Cliente</label>
+                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Responsáveis Internos Ativos</label>
                       <input 
                         type="text" 
-                        value={selectedClient.requests || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'requests', e.target.value)}
-                        placeholder="Ex: Precisa de alteração na landing page urgente"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
+                        value={selectedClient.internalResponsibles || ''} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'internalResponsibles', e.target.value)}
+                        placeholder="Ex: Gabriel & Neto"
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-xs focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Prioridade do Chamado</label>
+                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Prioridade Geral</label>
                       <select 
                         value={selectedClient.priority || 'Média'} 
                         onChange={(e: any) => updateClientField(selectedClient.id, 'priority', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none"
                       >
                         <option value="Baixa">🟢 Baixa</option>
                         <option value="Média">🟡 Média</option>
                         <option value="Alta">🔴 Alta</option>
                       </select>
                     </div>
-                  </div>
-                )}
-
-                {/* 9ª ETAPA — ENTREGA DOS SERVIÇOS + RETENÇÃO */}
-                {selectedClient.stageId === 9 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                     <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Entregas Realizadas no Ciclo</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.deliveries || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'deliveries', e.target.value)}
-                        placeholder="Ex: Landing Page concluída, 15 criativos publicados..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Principais Resultados Gerados</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.results || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'results', e.target.value)}
-                        placeholder="Ex: ROI 3.5, +120 leads qualificados no mês..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Feedback Geral do Cliente</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.feedback || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'feedback', e.target.value)}
-                        placeholder="Ex: Cliente satisfeito, solicitou aumento de investimento em anúncios"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 10ª ETAPA — ENTREGA DO RELATÓRIO MENSAL */}
-                {selectedClient.stageId === 10 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Nome/Link do Relatório Mensal</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.reportName || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'reportName', e.target.value)}
-                        placeholder="Ex: Relatório Mensal Maio/2026 PDF"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Data Limite de Entrega</label>
+                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Calendário (Data Limite Geral)</label>
                       <input 
                         type="date" 
-                        value={selectedClient.deliveryDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'deliveryDate', e.target.value)}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Métricas Principais Destacadas</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.metrics || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'metrics', e.target.value)}
-                        placeholder="CPA: R$ 8.50, Cliques: 4500, Conversão: 4.2%"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
+                        value={selectedClient.calendarDate || ''} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'calendarDate', e.target.value)}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none"
                       />
                     </div>
                   </div>
-                )}
 
-                {/* 11ª ETAPA — FEEDBACK DE CANCELAMENTO */}
-                {selectedClient.stageId === 11 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Motivo Principal do Cancelamento (Churn)</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.cancelReason || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'cancelReason', e.target.value)}
-                        placeholder="Ex: Problema financeiro da empresa, desalinhamento..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary animate-pulse text-brand-danger border-brand-danger/30"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* General Tasks List */}
+                    <div className="glass-card p-5 flex flex-col justify-between min-h-[220px]">
+                      <div>
+                        <label className="block text-xs font-bold text-white uppercase mb-3 flex items-center gap-1.5">
+                          <CheckSquare size={14} className="text-brand-primary" /> Tarefas Operacionais Gerais
+                        </label>
+                        
+                        <div className="space-y-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mb-4">
+                          {(!selectedClient.generalTasks || selectedClient.generalTasks.length === 0) ? (
+                            <p className="text-xs text-brand-muted italic">Nenhuma atividade operacional agendada.</p>
+                          ) : (
+                            selectedClient.generalTasks.map(gTask => (
+                              <div key={gTask.id} className="flex items-center justify-between p-2 rounded-lg bg-brand-bg/50 border border-brand-border/40">
+                                <div className="flex items-center gap-2">
+                                  <input 
+                                    type="checkbox"
+                                    checked={gTask.completed}
+                                    onChange={(e) => handleGeneralTaskToggle(selectedClient.id, gTask.id, e.target.checked)}
+                                    className="w-3.5 h-3.5 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
+                                  />
+                                  <span className={`text-[11px] ${gTask.completed ? 'line-through text-brand-muted' : 'text-white'}`}>
+                                    {gTask.text}
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={() => handleDeleteGeneralTask(selectedClient.id, gTask.id)}
+                                  className="text-brand-danger/60 hover:text-brand-danger p-0.5"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Add General Task Form */}
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const input = (e.target as any).gTaskInput;
+                        handleAddGeneralTask(selectedClient.id, input.value);
+                        input.value = '';
+                      }} className="flex gap-2">
+                        <input 
+                          type="text"
+                          name="gTaskInput"
+                          placeholder="Adicionar tarefa operativa..."
+                          className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-xs text-white"
+                        />
+                        <button 
+                          type="submit"
+                          className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary py-1.5 px-4 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Criar
+                        </button>
+                      </form>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Erros Identificados pela Equipe Amitai</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.errorsIdentified || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'errorsIdentified', e.target.value)}
-                        placeholder="Ex: Demora de resposta na criação dos ativos"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-brand-muted mb-1.5">Feedback Direto do Cliente</label>
+
+                    {/* Pending Operational Issues */}
+                    <div className="glass-card p-5">
+                      <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
+                        <ShieldAlert size={14} className="text-brand-danger" /> Pendências e Impedimentos Críticos
+                      </label>
                       <textarea 
-                        value={selectedClient.cancelFeedback || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'cancelFeedback', e.target.value)}
-                        placeholder="O que o cliente alegou para sair..."
-                        rows={2}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
+                        value={selectedClient.pendingIssues || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'pendingIssues', e.target.value)}
+                        placeholder="Descreva pendências que impedem o andamento operacional (ex: Aguardando logo vetorizada do cliente, conta de tráfego suspensa pelo Facebook...)"
+                        rows={6}
+                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
                       />
                     </div>
                   </div>
-                )}
 
-                {/* 12ª ETAPA — RENOVAÇÃO DE CONTRATO (MANDATORY OPERATIONAL FEATURE!) */}
-                {selectedClient.stageId === 12 && (
-                  <div className="p-4 bg-brand-bg/50 border border-brand-primary/20 rounded-xl text-center space-y-4">
-                    <p className="text-xs text-brand-muted max-w-lg mx-auto">
-                      O cliente concluiu com sucesso o seu ciclo operacional na Amitai e está qualificado para a renovação. 
-                    </p>
-                    <div className="border-t border-brand-border/40 my-4"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-white uppercase mb-1.5">Andamento Operacional (Geral)</label>
+                      <input 
+                        type="text" 
+                        value={selectedClient.operationalProgress || ''} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'operationalProgress', e.target.value)}
+                        placeholder="Ex: Landing Page concluída, iniciando anúncios de conversão..."
+                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-white uppercase mb-1.5">Observações Internas (Segredo de Equipe)</label>
+                      <input 
+                        type="text" 
+                        value={selectedClient.internalObservations || ''} 
+                        onChange={(e) => updateClientField(selectedClient.id, 'internalObservations', e.target.value)}
+                        placeholder="Ex: O cliente tem problemas em pagar no prazo, cobrar com 3 dias de antecedência"
+                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: HISTÓRICO & TIMELINE */}
+              {modalActiveTab === 'historico' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  
+                  {/* Manual Log Timeline Form */}
+                  <div className="bg-brand-bg/50 p-4 rounded-xl border border-brand-border/60">
+                    <label className="block text-xs font-bold text-brand-muted uppercase mb-2 flex items-center gap-1">
+                      <PlusCircle size={14} className="text-brand-primary" /> Registrar Novo Evento na Linha do Tempo
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input 
+                        type="text" 
+                        value={manualLogText}
+                        onChange={(e) => setManualLogText(e.target.value)}
+                        placeholder="Ex: Reunião estratégica de Kickoff realizada com Neto. Proposta comercial aceita sem descontos."
+                        className="flex-1 bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAddManualLog(selectedClient.id);
+                        }}
+                      />
                       <button 
-                        onClick={() => handleRenewContract(selectedClient)}
-                        className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2.5 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer transform active:scale-95 text-xs shadow-md shadow-brand-primary/10"
+                        onClick={() => handleAddManualLog(selectedClient.id)}
+                        className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2 px-5 rounded-xl text-xs transition-colors cursor-pointer shrink-0"
                       >
-                        <RefreshCw size={14} className="animate-spin" />
-                        Confirmar Renovação de Contrato
+                        Registrar Evento
                       </button>
                     </div>
-                    <p className="text-[10px] text-brand-muted italic mt-2">
-                      💡 Ao confirmar a renovação, o sistema mudará o cliente automaticamente para a **Etapa 4: Fazer e enviar contrato** para início de um novo ciclo comercial.
+                    <p className="text-[10px] text-brand-muted mt-1.5 italic">
+                      💡 Use este campo para documentar reuniões feitas, conversas importantes, entregas enviadas ou alterações operacionais.
                     </p>
                   </div>
-                )}
 
-              </div>
+                  {/* Log Timeline list */}
+                  <div className="glass-card p-6">
+                    <h3 className="font-bold text-white text-sm mb-6 flex items-center gap-1.5 border-b border-brand-border/40 pb-3">
+                      <Activity size={16} className="text-brand-primary" /> Linha do Tempo Operacional & Comercial
+                    </h3>
 
-              {/* SHARED GENERAL FIELDS: OBSERVATIONS AND MANUAL TASKS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* General Observations */}
-                <div className="glass-card p-6">
-                  <h4 className="font-bold text-white text-sm mb-3">Observações Gerais</h4>
-                  <textarea 
-                    value={selectedClient.observations || ''}
-                    onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
-                    placeholder="Adicione observações de comportamento, informações pontuais..."
-                    rows={6}
-                    className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-white text-xs focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
-
-                {/* Specific Pending Stage Tasks */}
-                <div className="glass-card p-6 flex flex-col justify-between">
-                  <div>
-                    <h4 className="font-bold text-white text-sm mb-3 flex items-center gap-1.5">
-                      <CheckSquare size={16} className="text-brand-primary" />
-                      Tarefas Pendentes
-                    </h4>
-                    
-                    <div className="space-y-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1 mb-4">
-                      {selectedClient.tasks.length === 0 ? (
-                        <p className="text-xs text-brand-muted italic">Nenhuma tarefa cadastrada.</p>
+                    <div className="space-y-6 border-l border-brand-border pl-4 max-h-[350px] overflow-y-auto custom-scrollbar">
+                      {selectedClient.history.length === 0 ? (
+                        <p className="text-xs text-brand-muted italic">Nenhuma interação registrada no histórico do cliente.</p>
                       ) : (
-                        selectedClient.tasks.map(t => (
-                          <div key={t.id} className="flex items-center justify-between bg-brand-bg/50 p-2 rounded-lg border border-brand-border/40">
-                            <div className="flex items-center gap-2">
-                              <input 
-                                type="checkbox"
-                                checked={t.completed}
-                                onChange={(e) => handleTaskToggle(selectedClient.id, t.id, e.target.checked)}
-                                className="w-3.5 h-3.5 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                              />
-                              <span className={`text-xs ${t.completed ? 'line-through text-brand-muted' : 'text-white'}`}>
-                                {t.text}
-                              </span>
-                            </div>
+                        selectedClient.history.map((log, idx) => (
+                          <div key={idx} className="relative py-1">
+                            <span className="absolute -left-[21px] top-2.5 w-2 h-2 rounded-full bg-brand-primary glow-primary"></span>
                             
-                            <button 
-                              onClick={() => {
-                                const newTasks = selectedClient.tasks.filter(item => item.id !== t.id);
-                                updateClientField(selectedClient.id, 'tasks', newTasks);
-                              }}
-                              className="text-brand-danger/60 hover:text-brand-danger p-0.5"
-                              title="Deletar tarefa"
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                            <div className="text-[10px] text-brand-muted">
+                              {log.timestamp} • por <strong className="text-white">{log.user}</strong>
+                            </div>
+                            <div className="text-xs text-white font-medium mt-1 leading-relaxed bg-brand-bg/40 p-2.5 rounded-lg border border-brand-border/30 mt-1">
+                              {log.action}
+                            </div>
                           </div>
                         ))
                       )}
                     </div>
                   </div>
-
-                  {/* Add Task input */}
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const input = (e.target as any).taskInput;
-                    handleAddTask(selectedClient.id, input.value);
-                    input.value = '';
-                  }} className="flex gap-2">
-                    <input 
-                      type="text"
-                      name="taskInput"
-                      placeholder="Nova tarefa operacional..."
-                      className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                    />
-                    <button 
-                      type="submit"
-                      className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary py-1.5 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      Criar
-                    </button>
-                  </form>
                 </div>
+              )}
 
-              </div>
-
-              {/* TIMELINE HISTORY LOGS */}
-              <div className="glass-card p-6">
-                <h4 className="font-bold text-white text-sm mb-4 flex items-center gap-1.5">
-                  <Activity size={16} className="text-brand-primary" />
-                  Histórico de Alterações do Lead
-                </h4>
-                
-                <div className="space-y-4 border-l border-brand-border pl-4 max-h-[220px] overflow-y-auto custom-scrollbar">
-                  {selectedClient.history.map((log, idx) => (
-                    <div key={idx} className="relative py-1">
-                      {/* Timeline dot */}
-                      <span className="absolute -left-[21px] top-2.5 w-2 h-2 rounded-full bg-brand-primary glow-primary"></span>
-                      
-                      <div className="text-[10px] text-brand-muted">
-                        {log.timestamp} • por <strong className="text-white">{log.user}</strong>
-                      </div>
-                      <div className="text-xs text-white font-medium mt-0.5">
-                        {log.action}
-                      </div>
-                    </div>
-                  ))}
+              {/* SPECIAL OPERATIONAL RENEWAL BUTTON IN HEADER COMPATIBILITY */}
+              {selectedClient.stageId === 12 && modalActiveTab !== 'historico' && (
+                <div className="p-4 bg-brand-bg/50 border border-brand-primary/20 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+                  <div>
+                    <h4 className="font-bold text-brand-primary flex items-center gap-1.5 uppercase tracking-wide">
+                      <RefreshCw size={14} className="animate-spin" /> O Cliente está qualificado para Renovação
+                    </h4>
+                    <p className="text-brand-muted mt-1">Clique para confirmar a renovação e reiniciar o ciclo operacional de assinatura contratual.</p>
+                  </div>
+                  <button 
+                    onClick={() => handleRenewContract(selectedClient)}
+                    className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2.5 px-6 rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer transform active:scale-95 text-xs shadow-md shadow-brand-primary/10"
+                  >
+                    <RefreshCw size={12} /> Confirmar Renovação
+                  </button>
                 </div>
-              </div>
+              )}
 
             </div>
 
@@ -1512,7 +1939,7 @@ export default function FunilVendas() {
                   setIsModalOpen(false);
                   setSelectedClient(null);
                 }}
-                className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2.5 px-6 rounded-xl transition-all duration-300 text-xs shadow-md shadow-brand-primary/10"
+                className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold py-2.5 px-6 rounded-xl transition-all duration-300 text-xs shadow-md shadow-brand-primary/10 cursor-pointer"
               >
                 Salvar e Fechar
               </button>
