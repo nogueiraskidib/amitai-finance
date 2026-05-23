@@ -6,14 +6,9 @@ import {
   TrendingDown, 
   Users, 
   Wallet, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   BarChart3,
-  AlertCircle,
-  Award,
   Target,
   CheckSquare,
-  Sparkles,
   MessageSquare,
   Calendar,
   Layers,
@@ -22,7 +17,10 @@ import {
   Clock,
   Zap,
   Activity,
-  UserCheck
+  UserCheck,
+  Edit2,
+  Save,
+  X
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -39,7 +37,7 @@ import { supabase } from '@/lib/supabase';
 import { useFilter } from '@/contexts/FilterContext';
 import DateFilter from '@/components/DateFilter';
 
-// Types from Funil page
+// Types
 interface LogItem {
   timestamp: string;
   action: string;
@@ -63,14 +61,27 @@ interface Client {
   progress?: number;
 }
 
-const DEFAULT_FUNNEL_CLIENTS: Client[] = [
-  { id: 'c1', name: 'Tech Startups Ltda', stageId: 1, timeInStage: 2, status: 'Em andamento', responsible: 'Gabriel', createdAt: '2026-05-22', lastUpdated: '2026-05-22', tasks: [], history: [] },
-  { id: 'c2', name: 'Clínica Sorriso Premium', stageId: 2, timeInStage: 1, status: 'Concluído', responsible: 'Manu', createdAt: '2026-05-22', lastUpdated: '2026-05-22', tasks: [], history: [] },
-  { id: 'c3', name: 'Varejo Express', stageId: 3, timeInStage: 4, status: 'Crítico', responsible: 'Neto', contractValue: 'R$ 5.500,00', createdAt: '2026-05-19', lastUpdated: '2026-05-22', tasks: [], history: [] },
-  { id: 'c4', name: 'Acme Importadora', stageId: 5, timeInStage: 5, status: 'Em andamento', responsible: 'Neto', createdAt: '2026-05-18', lastUpdated: '2026-05-21', tasks: [], history: [] },
-  { id: 'c5', name: 'Alpha Fitness Club', stageId: 7, timeInStage: 14, status: 'Em andamento', responsible: 'Gabriel', progress: 66, createdAt: '2026-05-11', lastUpdated: '2026-05-22', tasks: [], history: [] },
-  { id: 'c6', name: 'Beta Educação', stageId: 12, timeInStage: 3, status: 'Pendente', responsible: 'Neto', createdAt: '2026-05-20', lastUpdated: '2026-05-20', tasks: [], history: [] }
+interface PartnerMeta {
+  name: string;
+  dailyProgress: number;
+  dailyTarget: number;
+}
+
+interface GlobalMeta {
+  weeklyProgress: number;
+  weeklyTarget: number;
+}
+
+const DEFAULT_PARTNERS_METAS: PartnerMeta[] = [
+  { name: 'Gabriel', dailyProgress: 0, dailyTarget: 5 },
+  { name: 'Neto', dailyProgress: 0, dailyTarget: 5 },
+  { name: 'Manu', dailyProgress: 0, dailyTarget: 5 }
 ];
+
+const DEFAULT_GLOBAL_META: GlobalMeta = {
+  weeklyProgress: 0,
+  weeklyTarget: 25
+};
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -84,25 +95,60 @@ export default function Dashboard() {
   const [saldoManu, setSaldoManu] = useState(0);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  // Funnel / Clients stats state
+  // Real clients array from localStorage
   const [funnelClients, setFunnelClients] = useState<Client[]>([]);
+
+  // Metas State (Editable & Saved in localStorage)
+  const [partnersMetas, setPartnersMetas] = useState<PartnerMeta[]>([]);
+  const [globalMeta, setGlobalMeta] = useState<GlobalMeta>(DEFAULT_GLOBAL_META);
+  const [isEditingMetas, setIsEditingMetas] = useState(false);
+
+  // Temporary state for editing metas
+  const [tempPartnersMetas, setTempPartnersMetas] = useState<PartnerMeta[]>([]);
+  const [tempGlobalMeta, setTempGlobalMeta] = useState<GlobalMeta>(DEFAULT_GLOBAL_META);
 
   const { startDate, endDate } = useFilter();
 
   useEffect(() => {
-    // 1. Load funnel clients from localStorage to sync with Funnel page
-    const saved = localStorage.getItem('amitai-funil-v1');
-    if (saved) {
+    // 1. Load funnel clients from localStorage (Start with empty slate if not present)
+    const savedClients = localStorage.getItem('amitai-funil-v1');
+    if (savedClients) {
       try {
-        setFunnelClients(JSON.parse(saved));
+        setFunnelClients(JSON.parse(savedClients));
       } catch (e) {
-        setFunnelClients(DEFAULT_FUNNEL_CLIENTS);
+        setFunnelClients([]);
       }
     } else {
-      setFunnelClients(DEFAULT_FUNNEL_CLIENTS);
+      setFunnelClients([]);
     }
 
-    // 2. Fetch financials from Supabase
+    // 2. Load metas from localStorage
+    const savedPartnersMetas = localStorage.getItem('amitai-metas-socios-v1');
+    const savedGlobalMeta = localStorage.getItem('amitai-metas-global-v1');
+    
+    if (savedPartnersMetas) {
+      try {
+        setPartnersMetas(JSON.parse(savedPartnersMetas));
+      } catch (e) {
+        setPartnersMetas(DEFAULT_PARTNERS_METAS);
+      }
+    } else {
+      setPartnersMetas(DEFAULT_PARTNERS_METAS);
+      localStorage.setItem('amitai-metas-socios-v1', JSON.stringify(DEFAULT_PARTNERS_METAS));
+    }
+
+    if (savedGlobalMeta) {
+      try {
+        setGlobalMeta(JSON.parse(savedGlobalMeta));
+      } catch (e) {
+        setGlobalMeta(DEFAULT_GLOBAL_META);
+      }
+    } else {
+      setGlobalMeta(DEFAULT_GLOBAL_META);
+      localStorage.setItem('amitai-metas-global-v1', JSON.stringify(DEFAULT_GLOBAL_META));
+    }
+
+    // 3. Fetch financials from Supabase
     async function fetchData() {
       if (!startDate || !endDate) return;
 
@@ -224,7 +270,35 @@ export default function Dashboard() {
     return () => window.removeEventListener('focus', fetchData);
   }, [startDate, endDate]);
 
-  // Compute KPI details from localStorage funnel clients
+  // Compute targets edit toggle
+  const startEditing = () => {
+    setTempPartnersMetas(JSON.parse(JSON.stringify(partnersMetas)));
+    setTempGlobalMeta({ ...globalMeta });
+    setIsEditingMetas(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditingMetas(false);
+  };
+
+  const saveMetas = () => {
+    setPartnersMetas(tempPartnersMetas);
+    setGlobalMeta(tempGlobalMeta);
+    localStorage.setItem('amitai-metas-socios-v1', JSON.stringify(tempPartnersMetas));
+    localStorage.setItem('amitai-metas-global-v1', JSON.stringify(tempGlobalMeta));
+    setIsEditingMetas(false);
+  };
+
+  const handlePartnerMetaChange = (index: number, field: 'dailyProgress' | 'dailyTarget', value: number) => {
+    const updated = [...tempPartnersMetas];
+    updated[index] = {
+      ...updated[index],
+      [field]: Math.max(0, value)
+    };
+    setTempPartnersMetas(updated);
+  };
+
+  // Compute 100% REAL dynamic stats from local clients (Empty state if empty!)
   // COMMERCIAL metrics
   const newLeadsCount = funnelClients.filter(c => c.stageId === 1).length;
   const meetingsCount = funnelClients.filter(c => c.stageId === 2).length;
@@ -234,20 +308,20 @@ export default function Dashboard() {
   const activeClientsCount = funnelClients.filter(c => c.stageId === 7 || c.stageId === 9 || c.stageId === 12).length;
   const onboardingClientsCount = funnelClients.filter(c => c.stageId === 4 || c.stageId === 5 || c.stageId === 6).length;
   const lateClientsCount = funnelClients.filter(c => 
-    (c.stageId === 7 && (c.status === 'Crítico' || c.timeInStage > 10))
+    c.stageId === 7 && (c.status === 'Crítico' || c.timeInStage > 10)
   ).length;
 
-  // PROSPECTION ranking
+  // PROSPECTION ranking (Strictly counts REAL active leads by partner)
   const getPartnerLeadsCount = (name: string) => funnelClients.filter(c => c.responsible === name).length;
   const partnersRanking = [
-    { name: 'Gabriel', count: getPartnerLeadsCount('Gabriel'), targetProgress: 4, targetMax: 6, percent: 66 },
-    { name: 'Neto', count: getPartnerLeadsCount('Neto'), targetProgress: 3, targetMax: 6, percent: 50 },
-    { name: 'Manu', count: getPartnerLeadsCount('Manu'), targetProgress: 2, targetMax: 6, percent: 33 }
+    { name: 'Gabriel', count: getPartnerLeadsCount('Gabriel') },
+    { name: 'Neto', count: getPartnerLeadsCount('Neto') },
+    { name: 'Manu', count: getPartnerLeadsCount('Manu') }
   ].sort((a, b) => b.count - a.count);
 
   // OPERATION metrics
-  const overdueTasksCount = funnelClients.reduce((acc, c) => acc + c.tasks.filter(t => !t.completed).length, 0) + 1; // Seed value + manual check
-  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'Crítico').length + 1; // Default critical campaign indicator
+  const overdueTasksCount = funnelClients.reduce((acc, c) => acc + c.tasks.filter(t => !t.completed).length, 0);
+  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'Crítico').length;
   const pendingDeliveriesCount = funnelClients.filter(c => c.stageId === 7 && c.progress !== undefined && c.progress < 100).length;
 
   // FINANCIAL PREVISÃO (Faturamento + Expected contract closures)
@@ -259,44 +333,6 @@ export default function Dashboard() {
     return acc;
   }, 0);
   const previsaoFaturamento = totalEntradas + sumForecastValues;
-
-  // DYNAMIC IA INSIGHTS GENERATION
-  const getIAInsights = () => {
-    const insights = [];
-    
-    // Check for clients stuck in execution stage
-    const stuckClient = funnelClients.find(c => c.stageId === 7 && c.timeInStage >= 10);
-    if (stuckClient) {
-      insights.push({
-        text: `O cliente "${stuckClient.name}" está há ${stuckClient.timeInStage} dias sem novas atualizações na fase de execução de serviços.`,
-        type: 'critical'
-      });
-    } else {
-      insights.push({
-        text: 'O cliente "Alpha Fitness Club" está há 14 dias sem atualização no ciclo operacional.',
-        type: 'critical'
-      });
-    }
-
-    // Check partner prospection target
-    const lowestPartner = partnersRanking[partnersRanking.length - 1];
-    if (lowestPartner) {
-      insights.push({
-        text: `O sócio ${lowestPartner.name} está abaixo da meta diária de prospecções ativas (${lowestPartner.targetProgress}/${lowestPartner.targetMax}).`,
-        type: 'warning'
-      });
-    }
-
-    // Problem campaign
-    insights.push({
-      text: 'A campanha de anúncios "Geração de Leads - Sorriso Premium" caiu 32% em cliques técnicos nas últimas 48h.',
-      type: 'warning'
-    });
-
-    return insights;
-  };
-
-  const insights = getIAInsights();
 
   const partners = [
     { name: 'Neto', balance: `R$ ${saldoNeto.toFixed(2).replace('.', ',')}`, percentage: '30%', color: 'from-blue-500 to-indigo-600' },
@@ -311,36 +347,10 @@ export default function Dashboard() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard Principal</h1>
-          <p className="text-brand-muted mt-1">Visão geral do faturamento, processos e performance da Amitai.</p>
+          <p className="text-brand-muted mt-1">Visão geral do faturamento, processos e performance real da Amitai.</p>
         </div>
         <DateFilter />
       </header>
-
-      {/* IA INSIGHTS BANNER SECTION */}
-      <div className="glass-card p-6 bg-gradient-to-br from-brand-card to-brand-card-hover border-brand-primary/20 glow-primary">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="text-brand-primary animate-pulse" size={20} />
-          <h3 className="text-md font-bold text-white tracking-wide uppercase">Amitai IA Insights</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {insights.map((insight, idx) => (
-            <div 
-              key={idx} 
-              className={`p-4 rounded-xl border flex items-start gap-3 bg-brand-bg/60 ${
-                insight.type === 'critical' 
-                  ? 'border-red-500/20 text-red-200' 
-                  : 'border-amber-500/20 text-amber-200'
-              }`}
-            >
-              <Zap size={18} className={insight.type === 'critical' ? 'text-red-400 mt-0.5 shrink-0' : 'text-amber-400 mt-0.5 shrink-0'} />
-              <p className="text-xs leading-relaxed font-medium">
-                {insight.text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* FINANCEIRO RÁPIDO (4 Key Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -396,7 +406,7 @@ export default function Dashboard() {
               <h3 className="text-2xl font-black mt-2 text-white">
                 {loading ? '...' : `R$ ${previsaoFaturamento.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Faturamento + contratos em negociação</span>
+              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Faturamento + contratos do funil</span>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Wallet className="text-purple-500" size={20} />
@@ -452,7 +462,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 3. PROSPECÇÃO (SÓCIOS & METAS) */}
+        {/* 3. PROSPECÇÃO (SÓCIOS RANKING REAL) */}
         <div className="glass-card p-5 space-y-4">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Target size={16} className="text-purple-400" />
@@ -465,7 +475,7 @@ export default function Dashboard() {
                   <span className="text-[10px] bg-brand-bg border border-brand-border w-5 h-5 rounded-full flex items-center justify-center font-bold text-white">{idx + 1}</span>
                   {partner.name}
                 </span>
-                <span className="text-white font-bold">{partner.count} leads</span>
+                <span className="text-white font-bold">{partner.count} leads reais</span>
               </div>
             ))}
           </div>
@@ -495,53 +505,153 @@ export default function Dashboard() {
 
       </div>
 
-      {/* METAS & PROGRESSO DOS SÓCIOS PROSPECÇÃO */}
+      {/* METAS & PROGRESSO DOS SÓCIOS PROSPECÇÃO (FULLY EDITABLE!) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass-card p-6">
-          <h3 className="font-bold text-white text-md mb-6 flex items-center gap-2">
-            <Target className="text-brand-primary" />
-            Meta Diária & Progresso Semanal de Abordagem
-          </h3>
-          
-          <div className="space-y-5">
-            {partnersRanking.map((partner) => (
-              <div key={partner.name} className="space-y-2">
-                <div className="flex justify-between text-xs font-semibold">
-                  <span className="text-white flex items-center gap-1.5"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
-                  <span className="text-brand-muted">Meta diária: <strong className="text-white">{partner.targetProgress}/{partner.targetMax}</strong></span>
+        
+        {/* Partners Daily Metas Card */}
+        <div className="lg:col-span-2 glass-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-white text-md flex items-center gap-2">
+                <Target className="text-brand-primary animate-pulse" />
+                Meta Diária de Abordagem Ativa
+              </h3>
+              
+              {/* Edit Mode toggler */}
+              {!isEditingMetas ? (
+                <button 
+                  onClick={startEditing}
+                  className="text-xs text-brand-primary bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Edit2 size={12} /> Editar Metas
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={saveMetas}
+                    className="text-xs text-brand-bg bg-brand-primary hover:bg-brand-primary-hover font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Save size={12} /> Salvar
+                  </button>
+                  <button 
+                    onClick={cancelEditing}
+                    className="text-xs text-brand-muted bg-brand-border hover:bg-brand-card-hover font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <X size={12} /> Cancelar
+                  </button>
                 </div>
-                <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden border border-brand-border">
-                  <div 
-                    className="bg-brand-primary h-full transition-all duration-500 rounded-full" 
-                    style={{ width: `${partner.percent}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
+              )}
+            </div>
+            
+            <div className="space-y-6">
+              {!isEditingMetas ? (
+                // Display Mode
+                partnersMetas.map((partner) => {
+                  const percent = partner.dailyTarget > 0 
+                    ? Math.min(100, Math.round((partner.dailyProgress / partner.dailyTarget) * 100)) 
+                    : 0;
+
+                  return (
+                    <div key={partner.name} className="space-y-2">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-white flex items-center gap-1.5"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
+                        <span className="text-brand-muted">Progresso diário: <strong className="text-white">{partner.dailyProgress}/{partner.dailyTarget}</strong></span>
+                      </div>
+                      <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden border border-brand-border">
+                        <div 
+                          className="bg-brand-primary h-full transition-all duration-500 rounded-full" 
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                // Edit Mode
+                tempPartnersMetas.map((partner, idx) => (
+                  <div key={partner.name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-brand-bg/50 border border-brand-border rounded-xl">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5 shrink-0"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-brand-muted">Feito:</span>
+                        <input 
+                          type="number"
+                          value={partner.dailyProgress}
+                          onChange={(e) => handlePartnerMetaChange(idx, 'dailyProgress', Number(e.target.value))}
+                          className="w-16 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-brand-muted">Meta:</span>
+                        <input 
+                          type="number"
+                          value={partner.dailyTarget}
+                          onChange={(e) => handlePartnerMetaChange(idx, 'dailyTarget', Number(e.target.value))}
+                          className="w-16 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Weekly prospecção overview stats segment */}
+        {/* Global Weekly Summary Meta Card */}
         <div className="glass-card p-6 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-white text-md mb-2">Resumo Semanal de Prospecção</h3>
-            <p className="text-xs text-brand-muted mb-4">Total de interações comerciais de todos os sócios no ciclo atual.</p>
+            <p className="text-xs text-brand-muted mb-4">Total de interações comerciais de todos os sócios no ciclo semanal.</p>
           </div>
           
           <div className="py-4 border-y border-brand-border/40">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-brand-muted font-medium">Progresso Semanal Global:</span>
-              <span className="text-brand-primary font-bold">72%</span>
-            </div>
-            <div className="w-full bg-brand-bg h-2.5 rounded-full overflow-hidden border border-brand-border">
-              <div className="bg-brand-primary h-full transition-all duration-500" style={{ width: '72%' }}></div>
-            </div>
+            {!isEditingMetas ? (
+              // Display Mode
+              <>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-brand-muted font-medium">Progresso Semanal Global:</span>
+                  <span className="text-brand-primary font-bold">
+                    {globalMeta.weeklyTarget > 0 ? Math.min(100, Math.round((globalMeta.weeklyProgress / globalMeta.weeklyTarget) * 100)) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-brand-bg h-2.5 rounded-full overflow-hidden border border-brand-border">
+                  <div 
+                    className="bg-brand-primary h-full transition-all duration-500" 
+                    style={{ width: `${globalMeta.weeklyTarget > 0 ? Math.min(100, Math.round((globalMeta.weeklyProgress / globalMeta.weeklyTarget) * 100)) : 0}%` }}
+                  ></div>
+                </div>
+              </>
+            ) : (
+              // Edit Mode
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs gap-2">
+                  <span className="text-brand-muted">Contatos Feitos (Semana):</span>
+                  <input 
+                    type="number"
+                    value={tempGlobalMeta.weeklyProgress}
+                    onChange={(e) => setTempGlobalMeta({ ...tempGlobalMeta, weeklyProgress: Math.max(0, Number(e.target.value)) })}
+                    className="w-20 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs gap-2">
+                  <span className="text-brand-muted">Meta Total (Semana):</span>
+                  <input 
+                    type="number"
+                    value={tempGlobalMeta.weeklyTarget}
+                    onChange={(e) => setTempGlobalMeta({ ...tempGlobalMeta, weeklyTarget: Math.max(0, Number(e.target.value)) })}
+                    className="w-20 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="text-[11px] text-brand-muted mt-4">
-            🎯 Meta geral: atingir <strong>25 calls/abordagens</strong> por semana. Progresso atual: <strong>18/25</strong>.
+            🎯 Meta geral: atingir <strong className="text-white">{globalMeta.weeklyTarget} abordagens</strong> por semana. Progresso atual: <strong className="text-brand-primary">{globalMeta.weeklyProgress}/{globalMeta.weeklyTarget}</strong>.
           </div>
         </div>
+
       </div>
 
       {/* Financial Performance Chart (Recharts) */}
