@@ -144,7 +144,7 @@ export default function Clientes() {
   const [modalActiveTab, setModalActiveTab] = useState<'perfil' | 'dossie' | 'servicos' | 'operacional' | 'historico'>('perfil');
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
   
-  const [newServiceName, setNewServiceName] = useState('Gestão de tráfego');
+  const [newServiceName, setNewServiceName] = useState('Tráfego pago');
   const [newServiceResponsible, setNewServiceResponsible] = useState('Neto');
   const [manualLogText, setManualLogText] = useState('');
 
@@ -279,6 +279,8 @@ export default function Clientes() {
 
     setNewClientName('');
     setIsAddModalOpen(false);
+    setSelectedClient(newClient);
+    setIsModalOpen(true);
   };
 
   // RENEWAL PROCESS
@@ -1081,11 +1083,17 @@ export default function Clientes() {
                           onChange={(e) => setNewServiceName(e.target.value)}
                           className="bg-brand-card border border-brand-border rounded-lg py-1.5 px-2 text-white text-xs focus:outline-none"
                         >
-                          <option value="Gestão de tráfego">Gestão de tráfego</option>
-                          <option value="Criação de site">Criação de site</option>
+                          <option value="Tráfego pago">Tráfego pago</option>
+                          <option value="Criação de sites">Criação de sites</option>
+                          <option value="Automação">Automação</option>
+                          <option value="Captação de vídeo">Captação de vídeo</option>
+                          <option value="Captação de foto">Captação de foto</option>
                           <option value="Social media">Social media</option>
-                          <option value="Branding">Branding</option>
-                          <option value="Automações">Automações</option>
+                          <option value="Design gráfico">Design gráfico</option>
+                          <option value="Palestras">Palestras</option>
+                          <option value="Treinamentos">Treinamentos</option>
+                          <option value="Mentorias">Mentorias</option>
+                          <option value="Papelaria / marketing raiz">Papelaria / marketing raiz</option>
                         </select>
                       </div>
 

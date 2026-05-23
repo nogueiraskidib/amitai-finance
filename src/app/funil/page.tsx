@@ -176,7 +176,7 @@ export default function FunilVendas() {
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
 
   // Form State inside Serviços tab (adding a new service)
-  const [newServiceName, setNewServiceName] = useState('Gestão de tráfego');
+  const [newServiceName, setNewServiceName] = useState('Tráfego pago');
   const [newServiceResponsible, setNewServiceResponsible] = useState('Neto');
   
   // Form State for manual Timeline logs
@@ -291,6 +291,8 @@ export default function FunilVendas() {
     setNewClientStage(1);
     setNewClientStatus('Em andamento');
     setIsAddModalOpen(false);
+    setSelectedClient(newClient);
+    setIsModalOpen(true);
   };
 
   // Delete Client
@@ -1421,18 +1423,24 @@ export default function FunilVendas() {
                   {/* Top Bar inside Services tab to add a Service */}
                   <div className="bg-brand-bg/50 p-4 rounded-xl border border-brand-border flex flex-col sm:flex-row gap-4 items-center justify-between">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <div className="flex flex-col gap-1 w-full sm:w-48">
+                       <div className="flex flex-col gap-1 w-full sm:w-48">
                         <label className="text-[10px] text-brand-muted uppercase font-bold">Serviço à Contratar</label>
                         <select
                           value={newServiceName}
                           onChange={(e) => setNewServiceName(e.target.value)}
                           className="bg-brand-card border border-brand-border rounded-lg py-1.5 px-2 text-white text-xs focus:outline-none"
                         >
-                          <option value="Gestão de tráfego">Gestão de tráfego</option>
-                          <option value="Criação de site">Criação de site</option>
+                          <option value="Tráfego pago">Tráfego pago</option>
+                          <option value="Criação de sites">Criação de sites</option>
+                          <option value="Automação">Automação</option>
+                          <option value="Captação de vídeo">Captação de vídeo</option>
+                          <option value="Captação de foto">Captação de foto</option>
                           <option value="Social media">Social media</option>
-                          <option value="Branding">Branding</option>
-                          <option value="Automações">Automações</option>
+                          <option value="Design gráfico">Design gráfico</option>
+                          <option value="Palestras">Palestras</option>
+                          <option value="Treinamentos">Treinamentos</option>
+                          <option value="Mentorias">Mentorias</option>
+                          <option value="Papelaria / marketing raiz">Papelaria / marketing raiz</option>
                         </select>
                       </div>
 
