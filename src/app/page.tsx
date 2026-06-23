@@ -510,11 +510,11 @@ export default function Dashboard() {
 
       </div>
 
-      {/* METAS & PROGRESSO DOS SÓCIOS PROSPECÇÃO (FULLY EDITABLE!) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* PROGRESSO DOS SÓCIOS PROSPECÇÃO (FULLY EDITABLE!) */}
+      <div className="grid grid-cols-1 gap-6">
         
-        {/* Partners Daily Metas Card */}
-        <div className="lg:col-span-2 glass-card p-6 flex flex-col justify-between">
+        {/* Partners Daily Progress Card */}
+        <div className="glass-card p-6 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white text-md flex items-center gap-2">
@@ -528,7 +528,7 @@ export default function Dashboard() {
                   onClick={startEditing}
                   className="text-xs text-brand-primary bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <Edit2 size={12} /> Editar Metas
+                  <Edit2 size={12} /> Editar
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -551,26 +551,14 @@ export default function Dashboard() {
             <div className="space-y-6">
               {!isEditingMetas ? (
                 // Display Mode
-                partnersMetas.map((partner) => {
-                  const percent = partner.dailyTarget > 0 
-                    ? Math.min(100, Math.round((partner.dailyProgress / partner.dailyTarget) * 100)) 
-                    : 0;
-
-                  return (
-                    <div key={partner.name} className="space-y-2">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-white flex items-center gap-1.5"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
-                        <span className="text-brand-muted">Progresso diário: <strong className="text-white">{partner.dailyProgress}/{partner.dailyTarget}</strong></span>
-                      </div>
-                      <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden border border-brand-border">
-                        <div 
-                          className="bg-brand-primary h-full transition-all duration-500 rounded-full" 
-                          style={{ width: `${percent}%` }}
-                        ></div>
-                      </div>
+                partnersMetas.map((partner) => (
+                  <div key={partner.name} className="space-y-2">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-white flex items-center gap-1.5"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
+                      <span className="text-brand-muted">Feitos: <strong className="text-white">{partner.dailyProgress}</strong></span>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               ) : (
                 // Edit Mode
                 tempPartnersMetas.map((partner, idx) => (
@@ -578,20 +566,11 @@ export default function Dashboard() {
                     <span className="text-xs font-bold text-white flex items-center gap-1.5 shrink-0"><UserCheck size={14} className="text-brand-primary" /> {partner.name}</span>
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                       <div className="flex items-center gap-1.5 text-xs">
-                        <span className="text-brand-muted">Feito:</span>
+                        <span className="text-brand-muted">Feitos:</span>
                         <input 
                           type="number"
                           value={partner.dailyProgress}
                           onChange={(e) => handlePartnerMetaChange(idx, 'dailyProgress', Number(e.target.value))}
-                          className="w-16 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <span className="text-brand-muted">Meta:</span>
-                        <input 
-                          type="number"
-                          value={partner.dailyTarget}
-                          onChange={(e) => handlePartnerMetaChange(idx, 'dailyTarget', Number(e.target.value))}
                           className="w-16 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
                         />
                       </div>
@@ -600,60 +579,6 @@ export default function Dashboard() {
                 ))
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Global Weekly Summary Meta Card */}
-        <div className="glass-card p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="font-bold text-white text-md mb-2">Contatos da Semana</h3>
-            <p className="text-xs text-brand-muted mb-4">Total de contatos feitos por todos os sócios no ciclo semanal.</p>
-          </div>
-          
-          <div className="py-4 border-y border-brand-border/40">
-            {!isEditingMetas ? (
-              // Display Mode
-              <>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-brand-muted font-medium">Progresso Semanal Global:</span>
-                  <span className="text-brand-primary font-bold">
-                    {globalMeta.weeklyTarget > 0 ? Math.min(100, Math.round((globalMeta.weeklyProgress / globalMeta.weeklyTarget) * 100)) : 0}%
-                  </span>
-                </div>
-                <div className="w-full bg-brand-bg h-2.5 rounded-full overflow-hidden border border-brand-border">
-                  <div 
-                    className="bg-brand-primary h-full transition-all duration-500" 
-                    style={{ width: `${globalMeta.weeklyTarget > 0 ? Math.min(100, Math.round((globalMeta.weeklyProgress / globalMeta.weeklyTarget) * 100)) : 0}%` }}
-                  ></div>
-                </div>
-              </>
-            ) : (
-              // Edit Mode
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs gap-2">
-                  <span className="text-brand-muted">Contatos Feitos (Semana):</span>
-                  <input 
-                    type="number"
-                    value={tempGlobalMeta.weeklyProgress}
-                    onChange={(e) => setTempGlobalMeta({ ...tempGlobalMeta, weeklyProgress: Math.max(0, Number(e.target.value)) })}
-                    className="w-20 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs gap-2">
-                  <span className="text-brand-muted">Meta Total (Semana):</span>
-                  <input 
-                    type="number"
-                    value={tempGlobalMeta.weeklyTarget}
-                    onChange={(e) => setTempGlobalMeta({ ...tempGlobalMeta, weeklyTarget: Math.max(0, Number(e.target.value)) })}
-                    className="w-20 bg-brand-card border border-brand-border rounded-lg py-1 px-2 text-white text-center font-bold focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="text-[11px] text-brand-muted mt-4">
-            🎯 Meta geral: atingir <strong className="text-white">{globalMeta.weeklyTarget} contatos</strong> por semana. Progresso atual: <strong className="text-brand-primary">{globalMeta.weeklyProgress}/{globalMeta.weeklyTarget}</strong>.
           </div>
         </div>
 

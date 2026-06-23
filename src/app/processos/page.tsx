@@ -1769,15 +1769,7 @@ export default function ProcessosPage() {
               
               {/* Goal & Description */}
               <div className="space-y-4">
-                {selectedProcesso.objetivo && (
-                  <div className="bg-brand-bg p-4 rounded-xl border border-brand-border">
-                    <h4 className="text-xs font-semibold text-brand-primary uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                      <Info size={14} />
-                      Objetivo
-                    </h4>
-                    <p className="text-white text-sm leading-relaxed">{selectedProcesso.objetivo}</p>
-                  </div>
-                )}
+
                 <div>
                   <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2">Descrição</h4>
                   <p className="text-brand-text text-sm leading-relaxed whitespace-pre-wrap">{selectedProcesso.descricao}</p>
@@ -1903,19 +1895,7 @@ export default function ProcessosPage() {
                 </div>
               </div>
 
-              {/* Goal (Interno) */}
-              {formTipo === 'interno' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-brand-muted">Objetivo do Processo</label>
-                  <textarea
-                    rows={2}
-                    value={formObjetivo}
-                    onChange={(e) => setFormObjetivo(e.target.value)}
-                    placeholder="Qual a meta final que esse processo busca atingir?"
-                    className="w-full bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-primary text-sm"
-                  />
-                </div>
-              )}
+
 
               {/* Description */}
               <div className="space-y-1">
@@ -1930,189 +1910,7 @@ export default function ProcessosPage() {
                 />
               </div>
 
-              {/* Checklist Dynamic Array */}
-              <div className="space-y-3 pt-2 border-t border-brand-border/40">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-white uppercase tracking-wide">Itens do Checklist</label>
-                  <button
-                    type="button"
-                    onClick={() => setFormChecklist([...formChecklist, ''])}
-                    className="text-xs text-brand-primary hover:underline flex items-center gap-1"
-                  >
-                    <Plus size={14} /> Adicionar Item
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {formChecklist.map((texto, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={texto}
-                        onChange={(e) => {
-                          const updated = [...formChecklist];
-                          updated[idx] = e.target.value;
-                          setFormChecklist(updated);
-                        }}
-                        placeholder={`Item operacional ${idx + 1}`}
-                        className="flex-1 bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-primary text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (formChecklist.length === 1) setFormChecklist(['']);
-                          else setFormChecklist(formChecklist.filter((_, i) => i !== idx));
-                        }}
-                        className="p-2 bg-brand-bg hover:bg-brand-danger-dim border border-brand-border text-brand-muted hover:text-brand-danger rounded-lg transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Steps/Cronograma Dynamic Array */}
-              <div className="space-y-3 pt-2 border-t border-brand-border/40">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-white uppercase tracking-wide">
-                    {formTipo === 'interno' ? 'Passo a Passo do Processo' : 'Etapas do Cronograma'}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setFormEtapasPassos([...formEtapasPassos, ''])}
-                    className="text-xs text-brand-primary hover:underline flex items-center gap-1"
-                  >
-                    <Plus size={14} /> Adicionar Etapa
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {formEtapasPassos.map((texto, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-brand-primary flex-shrink-0 w-16">Etapa {idx + 1}:</span>
-                      <input
-                        type="text"
-                        value={texto}
-                        onChange={(e) => {
-                          const updated = [...formEtapasPassos];
-                          updated[idx] = e.target.value;
-                          setFormEtapasPassos(updated);
-                        }}
-                        placeholder={`Explicativo da etapa ${idx + 1}`}
-                        className="flex-1 bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-primary text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (formEtapasPassos.length === 1) setFormEtapasPassos(['']);
-                          else setFormEtapasPassos(formEtapasPassos.filter((_, i) => i !== idx));
-                        }}
-                        className="p-2 bg-brand-bg hover:bg-brand-danger-dim border border-brand-border text-brand-muted hover:text-brand-danger rounded-lg transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* External Services Specs */}
-              {formTipo === 'externo' && (
-                <>
-                  {/* Materials required */}
-                  <div className="space-y-3 pt-2 border-t border-brand-border/40">
-                    <div className="flex justify-between items-center">
-                      <label className="text-xs font-bold text-white uppercase tracking-wide">Materiais e Acessos</label>
-                      <button
-                        type="button"
-                        onClick={() => setFormMateriais([...formMateriais, ''])}
-                        className="text-xs text-brand-primary hover:underline flex items-center gap-1"
-                      >
-                        <Plus size={14} /> Adicionar Material
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {formMateriais.map((texto, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={texto}
-                            onChange={(e) => {
-                              const updated = [...formMateriais];
-                              updated[idx] = e.target.value;
-                              setFormMateriais(updated);
-                            }}
-                            placeholder="Ex: Acesso Google Ads, Logotipos vetorizados"
-                            className="flex-1 bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-primary text-xs"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formMateriais.length === 1) setFormMateriais(['']);
-                              else setFormMateriais(formMateriais.filter((_, i) => i !== idx));
-                            }}
-                            className="p-2 bg-brand-bg hover:bg-brand-danger-dim border border-brand-border text-brand-muted hover:text-brand-danger rounded-lg transition-all"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* SOP Document */}
-                  <div className="space-y-1 pt-2 border-t border-brand-border/40">
-                    <label className="text-xs font-bold text-white uppercase tracking-wide">SOP (Procedimento Operacional Padrão)</label>
-                    <textarea
-                      rows={4}
-                      value={formSop}
-                      onChange={(e) => setFormSop(e.target.value)}
-                      placeholder="Instruções de trabalho detalhadas passo a passo..."
-                      className="w-full bg-brand-bg border border-brand-border text-white rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-brand-primary text-xs font-mono"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Automations */}
-              <div className="space-y-3 pt-2 border-t border-brand-border/40">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-white uppercase tracking-wide">Automações Relacionadas</label>
-                  <button
-                    type="button"
-                    onClick={() => setFormAutomacoes([...formAutomacoes, ''])}
-                    className="text-xs text-brand-primary hover:underline flex items-center gap-1"
-                  >
-                    <Plus size={14} /> Adicionar Automação
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {formAutomacoes.map((texto, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={texto}
-                        onChange={(e) => {
-                          const updated = [...formAutomacoes];
-                          updated[idx] = e.target.value;
-                          setFormAutomacoes(updated);
-                        }}
-                        placeholder="Ex: Zapier Hubspot -> Slack"
-                        className="flex-1 bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-primary text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (formAutomacoes.length === 1) setFormAutomacoes(['']);
-                          else setFormAutomacoes(formAutomacoes.filter((_, i) => i !== idx));
-                        }}
-                        className="p-2 bg-brand-bg hover:bg-brand-danger-dim border border-brand-border text-brand-muted hover:text-brand-danger rounded-lg transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* General observations */}
               <div className="space-y-1 pt-2 border-t border-brand-border/40">
