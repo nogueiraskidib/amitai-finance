@@ -36,6 +36,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useFilter } from '@/contexts/FilterContext';
 import DateFilter from '@/components/DateFilter';
+import Link from 'next/link';
 
 // Types
 interface LogItem {
@@ -354,75 +355,75 @@ export default function Dashboard() {
 
       {/* FINANCEIRO RÁPIDO (4 Key Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-card p-6 border-l-4 border-l-brand-primary glow-primary">
+        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-brand-primary glow-primary block hover:scale-[1.02] transition-all cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Faturamento Mês</p>
               <h3 className="text-3xl font-black mt-2 text-gradient">
                 {loading ? '...' : `R$ ${totalEntradas.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-brand-primary font-semibold mt-1 block">Faturamento consolidado</span>
+              <span className="text-[10px] text-brand-primary font-semibold mt-1 block">Total faturado</span>
             </div>
             <div className="p-3 bg-brand-primary-dim rounded-lg">
               <TrendingUp className="text-brand-primary" size={20} />
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="glass-card p-6 border-l-4 border-l-blue-500">
+        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-blue-500 block hover:scale-[1.02] transition-all cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Lucro Líquido</p>
               <h3 className="text-2xl font-black mt-2 text-white">
                 {loading ? '...' : `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-blue-400 font-semibold mt-1 block">Saldo descontado despesas</span>
+              <span className="text-[10px] text-blue-400 font-semibold mt-1 block">Lucro real</span>
             </div>
             <div className="p-3 bg-blue-500/10 rounded-lg">
               <DollarSign className="text-blue-500" size={20} />
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="glass-card p-6 border-l-4 border-l-red-500">
+        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-red-500 block hover:scale-[1.02] transition-all cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Despesas / Gastos</p>
               <h3 className="text-2xl font-black mt-2 text-white">
                 {loading ? '...' : `R$ ${totalGastos.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-brand-danger font-semibold mt-1 block">Saídas operacionais</span>
+              <span className="text-[10px] text-brand-danger font-semibold mt-1 block">Total de gastos</span>
             </div>
             <div className="p-3 bg-brand-danger-dim rounded-lg">
               <TrendingDown className="text-brand-danger" size={20} />
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="glass-card p-6 border-l-4 border-l-purple-500">
+        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-purple-500 block hover:scale-[1.02] transition-all cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Previsão Financeira</p>
               <h3 className="text-2xl font-black mt-2 text-white">
                 {loading ? '...' : `R$ ${previsaoFaturamento.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Faturamento + contratos do funil</span>
+              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Previsão com novos contratos</span>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Wallet className="text-purple-500" size={20} />
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* METRIC COLUMNS: COMERCIAL, CLIENTES, PROSPECÇÃO, OPERAÇÃO */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* 1. COMERCIAL */}
-        <div className="glass-card p-5 space-y-4">
+        <Link href="/funil" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <MessageSquare size={16} className="text-cyan-400" />
-            Comercial
+            Funil de Vendas
           </h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center py-1">
@@ -438,13 +439,13 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-brand-primary bg-brand-primary-dim px-2.5 py-0.5 rounded-lg border border-brand-primary/20">{closingsCount}</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* 2. CLIENTES */}
-        <div className="glass-card p-5 space-y-4">
+        <Link href="/clientes" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Users size={16} className="text-indigo-400" />
-            Clientes
+            Clientes Ativos
           </h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center py-1">
@@ -460,32 +461,36 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{onboardingClientsCount}</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* 3. PROSPECÇÃO (SÓCIOS RANKING REAL) */}
         <div className="glass-card p-5 space-y-4">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Target size={16} className="text-purple-400" />
-            Prospecção (Sócio/Ranking)
+            Contatos por Sócio
           </h4>
           <div className="space-y-3">
             {partnersRanking.map((partner, idx) => (
-              <div key={partner.name} className="flex items-center justify-between py-1 text-xs">
-                <span className="text-brand-muted flex items-center gap-1 font-medium">
-                  <span className="text-[10px] bg-brand-bg border border-brand-border w-5 h-5 rounded-full flex items-center justify-center font-bold text-white">{idx + 1}</span>
+              <Link 
+                key={partner.name} 
+                href={`/processos?tab=equipe&member=${partner.name.toLowerCase()}`}
+                className="flex items-center justify-between py-1 text-xs hover:text-brand-primary transition-colors cursor-pointer group"
+              >
+                <span className="text-brand-muted group-hover:text-brand-primary flex items-center gap-1 font-medium">
+                  <span className="text-[10px] bg-brand-bg border border-brand-border w-5 h-5 rounded-full flex items-center justify-center font-bold text-white group-hover:border-brand-primary">{idx + 1}</span>
                   {partner.name}
                 </span>
-                <span className="text-white font-bold">{partner.count} leads reais</span>
-              </div>
+                <span className="text-white font-bold group-hover:text-brand-primary">{partner.count} leads reais</span>
+              </Link>
             ))}
           </div>
         </div>
 
         {/* 4. OPERAÇÃO */}
-        <div className="glass-card p-5 space-y-4">
+        <Link href="/processos?tab=interno" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <CheckSquare size={16} className="text-pink-400" />
-            Operação
+            Tarefas & Entregas
           </h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center py-1">
@@ -501,7 +506,7 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{pendingDeliveriesCount}</span>
             </div>
           </div>
-        </div>
+        </Link>
 
       </div>
 
@@ -514,7 +519,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-white text-md flex items-center gap-2">
                 <Target className="text-brand-primary animate-pulse" />
-                Meta Diária de Abordagem Ativa
+                Contatos de Hoje
               </h3>
               
               {/* Edit Mode toggler */}
@@ -601,8 +606,8 @@ export default function Dashboard() {
         {/* Global Weekly Summary Meta Card */}
         <div className="glass-card p-6 flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-white text-md mb-2">Resumo Semanal de Prospecção</h3>
-            <p className="text-xs text-brand-muted mb-4">Total de interações comerciais de todos os sócios no ciclo semanal.</p>
+            <h3 className="font-bold text-white text-md mb-2">Contatos da Semana</h3>
+            <p className="text-xs text-brand-muted mb-4">Total de contatos feitos por todos os sócios no ciclo semanal.</p>
           </div>
           
           <div className="py-4 border-y border-brand-border/40">
@@ -648,7 +653,7 @@ export default function Dashboard() {
           </div>
           
           <div className="text-[11px] text-brand-muted mt-4">
-            🎯 Meta geral: atingir <strong className="text-white">{globalMeta.weeklyTarget} abordagens</strong> por semana. Progresso atual: <strong className="text-brand-primary">{globalMeta.weeklyProgress}/{globalMeta.weeklyTarget}</strong>.
+            🎯 Meta geral: atingir <strong className="text-white">{globalMeta.weeklyTarget} contatos</strong> por semana. Progresso atual: <strong className="text-brand-primary">{globalMeta.weeklyProgress}/{globalMeta.weeklyTarget}</strong>.
           </div>
         </div>
 
@@ -658,7 +663,7 @@ export default function Dashboard() {
       <div className="glass-card p-6 min-h-[400px] flex flex-col">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="text-brand-primary" size={20} />
-          <h3 className="text-xl font-bold text-white">Análise de Desempenho Financeiro</h3>
+          <h3 className="text-xl font-bold text-white">Entradas e Gastos do Mês</h3>
         </div>
         
         <div className="flex-1 w-full min-h-[300px]">
@@ -711,24 +716,31 @@ export default function Dashboard() {
       </div>
 
       {/* Partners Payout Balances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {partners.map((partner) => (
-          <div key={partner.name} className="glass-card p-6 relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${partner.color} opacity-10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110`} />
-            <div className="relative z-10 flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-white">{partner.name}</h4>
-              <span className="text-xs font-medium px-2 py-1 bg-brand-bg rounded-full border border-brand-border text-brand-muted">
-                {partner.percentage}
-              </span>
-            </div>
-            <div className="relative z-10">
-              <p className="text-brand-muted text-sm mb-1">Saldo Atual</p>
-              <p className="text-3xl font-bold text-white">
-                {loading ? '...' : partner.balance}
-              </p>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-3">
+        <h3 className="text-lg font-bold text-white">Saldos dos Sócios (Fechamento)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {partners.map((partner) => (
+            <Link 
+              key={partner.name} 
+              href="/fechamento"
+              className="glass-card p-6 relative overflow-hidden group block hover:scale-[1.02] transition-all cursor-pointer"
+            >
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${partner.color} opacity-10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110`} />
+              <div className="relative z-10 flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-white">{partner.name}</h4>
+                <span className="text-xs font-medium px-2 py-1 bg-brand-bg rounded-full border border-brand-border text-brand-muted">
+                  {partner.percentage}
+                </span>
+              </div>
+              <div className="relative z-10">
+                <p className="text-brand-muted text-sm mb-1">Saldo Atual</p>
+                <p className="text-3xl font-bold text-white">
+                  {loading ? '...' : partner.balance}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
     </div>

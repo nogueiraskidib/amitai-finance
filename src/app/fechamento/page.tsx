@@ -106,12 +106,12 @@ export default function Fechamento() {
         <div className="glass-card p-6 lg:col-span-2">
           <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
             <PieChartIcon className="text-brand-primary" />
-            Resumo do Mês
+            Entradas do Mês
           </h3>
           
           <div className="space-y-6">
             <div className="flex justify-between items-center p-4 bg-brand-bg rounded-lg border border-brand-border">
-              <span className="text-brand-muted">Total Recebido (100%)</span>
+              <span className="text-brand-muted">Total Recebido</span>
               <span className="text-xl font-bold text-white">R$ {totalEntradas.toFixed(2).replace('.', ',')}</span>
             </div>
 
@@ -129,7 +129,7 @@ export default function Fechamento() {
                 <span className="text-lg font-bold text-white">R$ {saldoManu.toFixed(2).replace('.', ',')}</span>
               </div>
               <div className="p-4 bg-brand-primary-dim rounded-lg border border-brand-primary/20">
-                <span className="text-brand-primary block text-sm mb-1 font-medium">Caixa Empresa Bruto (10%)</span>
+                <span className="text-brand-primary block text-sm mb-1 font-medium">Reserva da Empresa (10%)</span>
                 <span className="text-lg font-bold text-brand-primary">R$ {caixaBruto.toFixed(2).replace('.', ',')}</span>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function Fechamento() {
 
         <div className="glass-card p-6 flex flex-col justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white mb-4">Gastos Operacionais</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Gastos do Mês</h3>
             <div className="space-y-4">
               {gastos.length === 0 && <span className="text-brand-muted">Nenhum gasto registrado.</span>}
               {gastos.map((g, i) => (
@@ -161,7 +161,7 @@ export default function Fechamento() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-6 text-center sm:text-left">
           <div>
             <h3 className="text-lg font-medium text-brand-muted">Saldo Final da Empresa</h3>
-            <p className="text-sm text-brand-muted mt-1">(Caixa 10% - Gastos Operacionais)</p>
+            <p className="text-sm text-brand-muted mt-1">(Reserva 10% menos Gastos)</p>
           </div>
           <div className="sm:text-right">
             <span className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${saldoFinalEmpresa < 0 ? 'text-brand-danger' : 'text-gradient'}`}>

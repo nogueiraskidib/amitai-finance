@@ -33,7 +33,8 @@ import {
   ListTodo,
   TrendingUp,
   Activity,
-  Layers
+  Layers,
+  Download
 } from 'lucide-react';
 
 // Type definitions
@@ -756,6 +757,26 @@ export default function ProcessosPage() {
     }
   }, []);
 
+  // Handle URL query parameters for active tab and selected member details
+  useEffect(() => {
+    if (typeof window !== 'undefined' && integrantes.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      const member = params.get('member');
+      if (tab) {
+        if (tab === 'interno' || tab === 'externo' || tab === 'equipe') {
+          setActiveTab(tab);
+        }
+      }
+      if (member) {
+        const found = integrantes.find(i => i.nome.toLowerCase() === member.toLowerCase());
+        if (found) {
+          setSelectedIntegrante(found);
+        }
+      }
+    }
+  }, [integrantes]);
+
   // Save changes to processes
   const saveProcessos = (updated: Processo[]) => {
     setProcessos(updated);
@@ -1036,6 +1057,174 @@ export default function ProcessosPage() {
     };
   };
 
+  // Export process as PDF using a styled print window
+  const exportarProcessoPDF = (proc: Processo) => {
+    const getTipoLabel = (tipo: string) => tipo === 'interno' ? 'Processo Interno' : 'Serviço Prestado';
+    const getStatusLabel = (status: string) => status;
+
+    const checklistHTML = proc.checklist.map((item, idx) => `
+      <div class="checklist-item ${item.concluida ? 'done' : ''}">
+        <span class="check-box">${item.concluida ? '✓' : '○'}</span>
+        <span>${item.texto}</span>
+      </div>
+    `).join('');
+
+    const stepsArray = proc.tipo === 'interno' ? (proc.passoAPasso || []) : (proc.etapas || []);
+    const stepsHTML = stepsArray.length > 0 ? `
+      <div class="section">
+        <h3 class="section-title">📋 Etapas de Entrega</h3>
+        ${stepsArray.map((step, idx) => `
+          <div class="step-item">
+            <span class="step-num">Passo ${idx + 1}</span>
+            <p>${step}</p>
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
+
+    const automacoesHTML = proc.automacoes && proc.automacoes.length > 0 ? `
+      <div class="section">
+        <h3 class="section-title">⚡ Automações</h3>
+        <ul class="list">${proc.automacoes.map(a => `<li>${a}</li>`).join('')}</ul>
+      </div>
+    ` : '';
+
+    const materiaisHTML = proc.materiais && proc.materiais.length > 0 ? `
+      <div class="section">
+        <h3 class="section-title">📦 Materiais Necessários</h3>
+        <ul class="list">${proc.materiais.map(m => `<li>${m}</li>`).join('')}</ul>
+      </div>
+    ` : '';
+
+    const sopHTML = proc.sop ? `
+      <div class="section">
+        <h3 class="section-title">📖 Instruções SOP</h3>
+        <div class="sop-box">${proc.sop}</div>
+      </div>
+    ` : '';
+
+    const objetivoHTML = proc.objetivo ? `
+      <div class="section objective-box">
+        <h3 class="section-title">🎯 Objetivo</h3>
+        <p>${proc.objetivo}</p>
+      </div>
+    ` : '';
+
+    const observacoesHTML = proc.observacoes ? `
+      <div class="section">
+        <h3 class="section-title">💡 Observações Adicionais</h3>
+        <p class="obs-text">${proc.observacoes}</p>
+      </div>
+    ` : '';
+
+    const now = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Dossiê — ${proc.nome}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a2e; font-size: 13px; line-height: 1.6; }
+          .page { padding: 36px 44px; max-width: 900px; margin: 0 auto; }
+          .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 20px; border-bottom: 3px solid #00ff9d; margin-bottom: 28px; }
+          .header-left h1 { font-size: 22px; font-weight: 800; color: #0a0f1e; margin-bottom: 4px; }
+          .header-left .subtitle { font-size: 11px; color: #6b7280; font-weight: 500; }
+          .header-right { text-align: right; }
+          .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1.5px solid; margin-left: 6px; }
+          .badge-tipo { background: #f0fdf4; color: #16a34a; border-color: #86efac; }
+          .badge-status-Ativo { background: #f0fdf4; color: #15803d; border-color: #4ade80; }
+          .badge-status-Rascunho { background: #fefce8; color: #a16207; border-color: #fde047; }
+          .badge-status-Arquivado { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+          .meta-row { display: flex; gap: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; flex-wrap: wrap; }
+          .meta-item { display: flex; flex-direction: column; gap: 2px; }
+          .meta-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; }
+          .meta-value { font-size: 13px; font-weight: 600; color: #1f2937; }
+          .section { margin-bottom: 22px; }
+          .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #4b5563; border-bottom: 1.5px solid #e5e7eb; padding-bottom: 6px; margin-bottom: 12px; }
+          .objective-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px; }
+          .objective-box p { color: #166534; font-weight: 500; }
+          p { color: #374151; }
+          .list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+          .list li { padding: 7px 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 7px; color: #374151; display: flex; align-items: flex-start; gap: 8px; }
+          .list li::before { content: '▸'; color: #00cc7d; font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+          .checklist-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px; background: #fff; }
+          .checklist-item.done { background: #f0fdf4; border-color: #bbf7d0; }
+          .checklist-item.done span:last-child { text-decoration: line-through; color: #9ca3af; }
+          .check-box { font-size: 14px; color: #00cc7d; font-weight: 700; flex-shrink: 0; width: 18px; text-align: center; }
+          .step-item { display: flex; gap: 14px; padding: 10px 14px; background: #f8fafc; border-left: 3px solid #00cc7d; border-radius: 0 8px 8px 0; margin-bottom: 8px; }
+          .step-num { font-size: 10px; font-weight: 800; color: #00cc7d; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding-top: 2px; }
+          .step-item p { color: #374151; }
+          .sop-box { background: #1e293b; color: #e2e8f0; border-radius: 10px; padding: 14px 16px; font-family: monospace; font-size: 12px; line-height: 1.8; white-space: pre-wrap; }
+          .obs-text { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; color: #92400e; font-style: italic; }
+          .footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page { padding: 20px 28px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="page">
+          <div class="header">
+            <div class="header-left">
+              <h1>${proc.nome}</h1>
+              <div class="subtitle">Agência Amitai &nbsp;•&nbsp; Dossiê Operacional</div>
+            </div>
+            <div class="header-right">
+              <span class="badge badge-tipo">${getTipoLabel(proc.tipo)}</span>
+              <span class="badge badge-status-${proc.status}">${getStatusLabel(proc.status)}</span>
+            </div>
+          </div>
+
+          <div class="meta-row">
+            <div class="meta-item"><span class="meta-label">Responsável</span><span class="meta-value">${proc.responsavel}</span></div>
+            <div class="meta-item"><span class="meta-label">Prazo</span><span class="meta-value">${proc.prazo}</span></div>
+            <div class="meta-item"><span class="meta-label">Status</span><span class="meta-value">${proc.status}</span></div>
+            <div class="meta-item"><span class="meta-label">Tipo</span><span class="meta-value">${getTipoLabel(proc.tipo)}</span></div>
+            <div class="meta-item"><span class="meta-label">Gerado em</span><span class="meta-value">${now}</span></div>
+          </div>
+
+          ${objetivoHTML}
+
+          <div class="section">
+            <h3 class="section-title">📝 Descrição</h3>
+            <p>${proc.descricao}</p>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">✅ Checklist (${proc.checklist.filter(i => i.concluida).length}/${proc.checklist.length} concluídos)</h3>
+            ${checklistHTML}
+          </div>
+
+          ${stepsHTML}
+          ${automacoesHTML}
+          ${materiaisHTML}
+          ${sopHTML}
+          ${observacoesHTML}
+
+          <div class="footer">
+            <span>Agência Amitai — ERP Interno</span>
+            <span>Exportado em ${now}</span>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) return;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 800);
+  };
+
   // Filter processes list
   const filteredProcessos = processos.filter(p => {
     // Tab filtering (Interno/Externo)
@@ -1097,9 +1286,9 @@ export default function ProcessosPage() {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Workflow className="text-brand-primary h-8 w-8" />
-            Central de Processos
+            Tarefas e Processos
           </h1>
-          <p className="text-brand-muted mt-1">Organize responsabilidades, processos internos, serviços e acompanhe a equipe da agência.</p>
+          <p className="text-brand-muted mt-1">Acompanhe o que cada um deve fazer e como os serviços são entregues.</p>
         </div>
         <button
           onClick={() => openFormProcesso()}
@@ -1121,7 +1310,7 @@ export default function ProcessosPage() {
           }`}
         >
           <ClipboardList size={18} />
-          Processos Internos
+          Como a Agência Funciona (Interno)
         </button>
         <button
           onClick={() => { setActiveTab('externo'); setSelectedProcesso(null); setSelectedIntegrante(null); }}
@@ -1132,7 +1321,7 @@ export default function ProcessosPage() {
           }`}
         >
           <Sparkles size={18} />
-          Processos Externos (Serviços)
+          Como Entregamos os Serviços (Clientes)
         </button>
         <button
           onClick={() => { setActiveTab('equipe'); setSelectedProcesso(null); setSelectedIntegrante(null); }}
@@ -1143,7 +1332,7 @@ export default function ProcessosPage() {
           }`}
         >
           <UserCheck size={18} />
-          Equipe da Agência
+          Nossa Equipe
         </button>
       </div>
 
@@ -1170,7 +1359,7 @@ export default function ProcessosPage() {
               onChange={(e) => setFilterResponsavel(e.target.value)}
               className="w-full bg-brand-bg border border-brand-border text-white rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all text-sm appearance-none"
             >
-              <option value="">Qualquer Responsável</option>
+              <option value="">Quem faz</option>
               <option value="Neto">Neto</option>
               <option value="Gabriel">Gabriel</option>
               <option value="Manu">Manu</option>
@@ -1185,7 +1374,7 @@ export default function ProcessosPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full bg-brand-bg border border-brand-border text-white rounded-lg pl-9 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all text-sm appearance-none"
             >
-              <option value="Todos">Ativos / Rascunhos</option>
+              <option value="Todos">Status</option>
               <option value="Ativo">Apenas Ativos</option>
               <option value="Rascunho">Apenas Rascunhos</option>
               <option value="Arquivado">Arquivados</option>
@@ -1246,24 +1435,8 @@ export default function ProcessosPage() {
                       </p>
                     </div>
 
-                    {/* Progress Slider */}
+                    {/* Card Actions */}
                     <div className="mt-6 pt-4 border-t border-brand-border/50 space-y-4">
-                      {checklistTotal > 0 && (
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-brand-muted font-medium">Checklist</span>
-                            <span className="text-white font-bold">{checklistDoneCount}/{checklistTotal} ({pctDone}%)</span>
-                          </div>
-                          <div className="w-full bg-brand-bg h-1.5 rounded-full overflow-hidden border border-brand-border/60">
-                            <div 
-                              className={`h-full rounded-full transition-all duration-500 ${getPartnerBarColor(proc.responsavel)}`} 
-                              style={{ width: `${pctDone}%` }} 
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Card Actions */}
                       <div className="flex items-center justify-between text-xs text-brand-muted">
                         <span className="text-[10px] font-medium opacity-65">
                           {proc.tipo === 'interno' ? 'Processo Operacional' : 'Serviço Prestado'}
@@ -1354,32 +1527,9 @@ export default function ProcessosPage() {
                     </div>
                   </div>
 
-                  {/* Productivity Index Card */}
-                  <div className="bg-brand-bg/50 p-4 rounded-xl border border-brand-border/40 space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-brand-muted font-semibold flex items-center gap-1.5">
-                        <TrendingUp size={14} className="text-brand-primary" />
-                        Produtividade Global
-                      </span>
-                      <span className="text-white font-bold text-sm">{metrics.pct}%</span>
-                    </div>
-                    <div className="w-full bg-brand-bg h-2 rounded-full overflow-hidden border border-brand-border/80">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 bg-gradient-to-r ${member.fotoGradient}`}
-                        style={{ width: `${metrics.pct}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] text-brand-muted pt-1">
-                      <span>{metrics.completed}/{metrics.total} Concluídos</span>
-                      <span className="bg-brand-border/50 text-[10px] text-white px-2 py-0.5 rounded font-mono">
-                        {metrics.procCount} Processos | {metrics.tasksTotal} Rotinas
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Responsibilities list snippet */}
                   <div className="space-y-2">
-                    <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">Principais Funções</span>
+                    <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">O que faz na agência</span>
                     <ul className="space-y-1.5">
                       {member.responsabilidades.slice(0, 3).map((resp, idx) => (
                         <li key={idx} className="text-xs text-brand-text/90 flex items-start gap-2 leading-relaxed line-clamp-1">
@@ -1399,7 +1549,7 @@ export default function ProcessosPage() {
                 {/* Footer Info button */}
                 <div className="mt-8 pt-4 border-t border-brand-border/40 flex items-center justify-between text-xs text-brand-primary font-semibold">
                   <span className="text-brand-muted text-[10px] font-mono group-hover:text-brand-text">
-                    Ver Painel Completo
+                    Ver Detalhes
                   </span>
                   <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform" />
                 </div>
@@ -1462,36 +1612,11 @@ export default function ProcessosPage() {
               {/* LEFT COLUMN: Profile info, responsibilities and observations */}
               <div className="w-full md:w-80 border-r border-brand-border/60 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-brand-bg/20">
                 
-                {/* Productivity Gauge Card */}
-                <div className="glass-card p-5 border border-brand-border text-center space-y-3">
-                  <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">Índice de Produtividade</span>
-                  <div className="relative inline-flex items-center justify-center">
-                    <svg className="w-24 h-24 transform -rotate-90">
-                      <circle cx="48" cy="48" r="40" stroke="#1e293b" strokeWidth="6" fill="transparent" />
-                      <circle 
-                        cx="48" cy="48" r="40" 
-                        stroke={selectedIntegrante.nome === 'Neto' ? '#3b82f6' : selectedIntegrante.nome === 'Gabriel' ? '#10b981' : '#a855f7'}
-                        strokeWidth="6" 
-                        fill="transparent" 
-                        strokeDasharray={251.2}
-                        strokeDashoffset={251.2 - (251.2 * getProductivityMetrics(selectedIntegrante).pct) / 100}
-                        className="transition-all duration-1000 ease-out"
-                      />
-                    </svg>
-                    <span className="absolute text-xl font-black text-white">
-                      {getProductivityMetrics(selectedIntegrante).pct}%
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-brand-muted leading-relaxed">
-                    Mapeado de acordo com tarefas e checklists operacionais concluídos.
-                  </p>
-                </div>
-
                 {/* Responsibilities */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                     <Activity size={14} className="text-brand-primary" />
-                    Responsabilidades
+                    O que faz na agência
                   </h4>
                   <ul className="space-y-2.5">
                     {selectedIntegrante.responsabilidades.map((resp, idx) => (
@@ -1506,7 +1631,7 @@ export default function ProcessosPage() {
                 {/* Observations */}
                 {selectedIntegrante.observacoes && (
                   <div className="pt-4 border-t border-brand-border/40 space-y-2">
-                    <h4 className="text-xs font-bold text-brand-muted uppercase tracking-wider">Observações do Sócio</h4>
+                    <h4 className="text-xs font-bold text-brand-muted uppercase tracking-wider">Anotações</h4>
                     <p className="text-brand-muted text-xs leading-relaxed whitespace-pre-wrap bg-brand-bg p-3 rounded-lg border border-brand-border/40">
                       {selectedIntegrante.observacoes}
                     </p>
@@ -1518,78 +1643,11 @@ export default function ProcessosPage() {
               {/* RIGHT COLUMN: Interactive tasks list and attributed processes list */}
               <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                 
-                {/* 1. INTERACTIVE GENERAL TASKS TODO LIST */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <ListTodo className="text-brand-primary" size={16} />
-                      Rotinas & Tarefas Operacionais ({getProductivityMetrics(selectedIntegrante).tasksDone}/{getProductivityMetrics(selectedIntegrante).tasksTotal})
-                    </h3>
-                  </div>
-
-                  {/* Add General Task Input Form */}
-                  <form onSubmit={(e) => handleAddGeneralTask(e, selectedIntegrante.id)} className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Adicionar nova tarefa operacional para este integrante..."
-                      value={newGeneralTask}
-                      onChange={(e) => setNewGeneralTask(e.target.value)}
-                      className="flex-1 bg-brand-bg border border-brand-border text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand-primary"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-brand-primary hover:bg-brand-primary-hover text-brand-bg font-bold px-4 py-2 rounded-lg transition-colors text-xs flex items-center gap-1.5"
-                    >
-                      <Plus size={14} /> Adicionar
-                    </button>
-                  </form>
-
-                  {/* Render list of general tasks */}
-                  {selectedIntegrante.tarefas.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedIntegrante.tarefas.map((task) => (
-                        <div
-                          key={task.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                            task.concluida
-                              ? 'bg-brand-primary-dim/10 border-brand-primary/10 text-brand-muted'
-                              : 'bg-brand-bg border-brand-border text-white hover:border-brand-primary/15'
-                          }`}
-                        >
-                          <div 
-                            onClick={() => toggleGeneralTask(selectedIntegrante.id, task.id)}
-                            className="flex items-center gap-3 cursor-pointer flex-1"
-                          >
-                            {task.concluida ? (
-                              <CheckSquare className="text-brand-primary flex-shrink-0" size={18} />
-                            ) : (
-                              <Square className="text-brand-muted flex-shrink-0" size={18} />
-                            )}
-                            <span className={`text-xs ${task.concluida ? 'line-through text-brand-muted' : 'text-white'}`}>
-                              {task.texto}
-                            </span>
-                          </div>
-                          
-                          <button
-                            onClick={() => deleteGeneralTask(selectedIntegrante.id, task.id)}
-                            className="p-1 text-brand-muted hover:text-brand-danger rounded transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-brand-muted italic py-4 text-center">Nenhuma tarefa de rotina atribuída.</p>
-                  )}
-                </div>
-
                 {/* 2. ATTRIBUTED PROCESSES LIST */}
                 <div className="space-y-4 pt-4 border-t border-brand-border/40">
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <Layers className="text-brand-primary" size={16} />
-                    Processos sob Gestão ({getProductivityMetrics(selectedIntegrante).procCount})
+                    Processos que gerencia ({getProductivityMetrics(selectedIntegrante).procCount})
                   </h3>
 
                   {processos.filter(p => p.responsavel === selectedIntegrante.nome && p.status !== 'Arquivado').length > 0 ? (
@@ -1620,18 +1678,7 @@ export default function ProcessosPage() {
                                 {proc.descricao}
                               </p>
                               
-                              <div className="space-y-1">
-                                <div className="flex justify-between items-center text-[10px]">
-                                  <span className="text-brand-muted">Checklist</span>
-                                  <span className="text-white font-bold">{done}/{total}</span>
-                                </div>
-                                <div className="w-full bg-brand-card h-1 rounded-full overflow-hidden border border-brand-border/40">
-                                  <div 
-                                    className={`h-full rounded-full transition-all duration-300 ${getPartnerBarColor(selectedIntegrante.nome)}`} 
-                                    style={{ width: `${pct}%` }} 
-                                  />
-                                </div>
-                              </div>
+
                             </div>
                           );
                         })}
@@ -1684,6 +1731,14 @@ export default function ProcessosPage() {
               
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => exportarProcessoPDF(selectedProcesso)}
+                  className="px-3 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary hover:text-white rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold"
+                  title="Exportar como PDF"
+                >
+                  <Download size={14} />
+                  Exportar PDF
+                </button>
+                <button
                   onClick={() => openFormProcesso(selectedProcesso)}
                   className="p-2 bg-brand-bg hover:bg-brand-card-hover rounded-lg border border-brand-border text-brand-muted hover:text-white transition-colors"
                   title="Editar"
@@ -1718,13 +1773,13 @@ export default function ProcessosPage() {
                   <div className="bg-brand-bg p-4 rounded-xl border border-brand-border">
                     <h4 className="text-xs font-semibold text-brand-primary uppercase tracking-wider flex items-center gap-1.5 mb-1">
                       <Info size={14} />
-                      Objetivo do Processo
+                      Objetivo
                     </h4>
                     <p className="text-white text-sm leading-relaxed">{selectedProcesso.objetivo}</p>
                   </div>
                 )}
                 <div>
-                  <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2">Descrição Geral</h4>
+                  <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2">Descrição</h4>
                   <p className="text-brand-text text-sm leading-relaxed whitespace-pre-wrap">{selectedProcesso.descricao}</p>
                 </div>
               </div>
@@ -1734,131 +1789,14 @@ export default function ProcessosPage() {
                 <div>
                   <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Clock size={14} />
-                    Prazo de Execução
+                    Prazo
                   </h4>
                   <span className="inline-block bg-brand-bg px-3 py-1.5 rounded-lg border border-brand-border text-white text-sm font-semibold">
                     {selectedProcesso.prazo}
                   </span>
                 </div>
 
-                {selectedProcesso.automacoes && selectedProcesso.automacoes.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Cpu size={14} />
-                      Automações Integradas
-                    </h4>
-                    <ul className="space-y-1 text-sm text-white">
-                      {selectedProcesso.automacoes.map((aut, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 bg-brand-primary rounded-full" />
-                          {aut}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
-
-              {/* External Services Specs */}
-              {selectedProcesso.tipo === 'externo' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-brand-border/40">
-                  {selectedProcesso.materiais && selectedProcesso.materiais.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <FileText size={14} />
-                        Materiais Requeridos
-                      </h4>
-                      <ul className="space-y-1.5 text-sm text-white">
-                        {selectedProcesso.materiais.map((mat, idx) => (
-                          <li key={idx} className="flex items-center gap-2 bg-brand-bg p-2 rounded border border-brand-border/60">
-                            <div className="h-1.5 w-1.5 bg-brand-primary rounded-full" />
-                            {mat}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {selectedProcesso.sop && (
-                    <div className="md:col-span-2 bg-brand-bg p-4 rounded-xl border border-brand-border">
-                      <h4 className="text-xs font-semibold text-brand-primary uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                        <BookOpen size={14} />
-                        SOP - Procedimento Operacional Padrão
-                      </h4>
-                      <p className="text-white text-xs leading-relaxed whitespace-pre-wrap font-mono bg-brand-card/50 p-3 rounded border border-brand-border/50">
-                        {selectedProcesso.sop}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Checklist */}
-              <div className="pt-6 border-t border-brand-border/40 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <CheckSquare className="text-brand-primary" size={16} />
-                    Checklist Operacional
-                  </h4>
-                  <span className="text-xs text-brand-muted">Clique nos itens para concluir</span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {selectedProcesso.checklist.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => toggleChecklistItem(selectedProcesso.id, item.id)}
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                        item.concluida
-                          ? 'bg-brand-primary-dim/30 border-brand-primary/30 text-brand-muted line-through'
-                          : 'bg-brand-bg border-brand-border text-white hover:border-brand-primary/20'
-                      }`}
-                    >
-                      {item.concluida ? (
-                        <CheckSquare className="text-brand-primary mt-0.5 flex-shrink-0" size={18} />
-                      ) : (
-                        <Square className="text-brand-muted mt-0.5 flex-shrink-0" size={18} />
-                      )}
-                      <span className="text-sm">{item.texto}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Steps Timeline */}
-              {((selectedProcesso.tipo === 'interno' && selectedProcesso.passoAPasso && selectedProcesso.passoAPasso.length > 0) ||
-                (selectedProcesso.tipo === 'externo' && selectedProcesso.etapas && selectedProcesso.etapas.length > 0)) && (
-                <div className="pt-6 border-t border-brand-border/40 space-y-4">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <ArrowRight className="text-brand-primary" size={16} />
-                    {selectedProcesso.tipo === 'interno' ? 'Passo a Passo Completo' : 'Etapas do Cronograma'}
-                  </h4>
-
-                  <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-brand-border">
-                    {((selectedProcesso.tipo === 'interno' ? selectedProcesso.passoAPasso : selectedProcesso.etapas) || []).map((step, idx) => (
-                      <div key={idx} className="relative">
-                        <div className="absolute -left-[23px] top-1.5 h-[12px] w-[12px] rounded-full bg-brand-primary border border-[#060b19] glow-primary" />
-                        <div className="space-y-1">
-                          <span className="text-xs font-bold text-brand-primary text-[10px]">Passo {idx + 1}</span>
-                          <p className="text-white text-sm leading-relaxed">{step}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {selectedProcesso.observacoes && (
-                <div className="pt-6 border-t border-brand-border/40 space-y-2">
-                  <h4 className="text-xs font-semibold text-brand-muted uppercase tracking-wider">Observações Adicionais</h4>
-                  <p className="text-brand-muted text-xs leading-relaxed whitespace-pre-wrap bg-brand-bg/40 p-3 rounded-lg border border-brand-border/40">
-                    {selectedProcesso.observacoes}
-                  </p>
-                </div>
-              )}
-
-            </div>
           </div>
         </div>
       )}

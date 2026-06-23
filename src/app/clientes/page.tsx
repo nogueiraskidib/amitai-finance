@@ -581,6 +581,76 @@ export default function Clientes() {
   };
 
 
+  const exportarDossiePDF = (client: Client) => {
+    const now = new Date().toLocaleString('pt-BR');
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Dossiê - ${client.name}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+          .header { text-align: center; border-bottom: 2px solid #00FF9D; padding-bottom: 20px; margin-bottom: 30px; }
+          .header h1 { margin: 0; color: #111; font-size: 24px; }
+          .header p { margin: 5px 0 0 0; color: #666; font-size: 14px; }
+          .section { margin-bottom: 25px; page-break-inside: avoid; }
+          .section-title { font-size: 12px; text-transform: uppercase; color: #666; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+          .content-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eaeaea; font-size: 14px; white-space: pre-wrap; }
+          .footer { margin-top: 50px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Dossiê Estratégico do Cliente</h1>
+          <p>${client.name} — Exportado em ${now}</p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Resumo do Cliente / Público Ideal</div>
+          <div class="content-box">${client.targetAudience || 'Não informado'}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Principais Dores e Problemas</div>
+          <div class="content-box">${client.pains || 'Não informado'}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">O que o cliente oferece de diferente?</div>
+          <div class="content-box">${client.differentials || 'Não informado'}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Concorrentes</div>
+          <div class="content-box">${client.competitors || 'Não informado'}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Objetivos e Metas</div>
+          <div class="content-box">${client.objectives || 'Não informado'}</div>
+        </div>
+
+        <div class="footer">
+          Agência Amitai — Confidencial
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) return;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 800);
+  };
+
   // --- OPERACIONAL CHECKS GENERAL ---
   const handleGeneralTaskToggle = (clientId: string, taskId: string, completed: boolean) => {
     const client = clients.find(c => c.id === clientId);
@@ -765,47 +835,22 @@ export default function Clientes() {
                     }`}>
                       {client.status}
                     </span>
-                    <span className="text-[10px] font-bold text-brand-muted">
-                      Etapa {client.stageId}
-                    </span>
                   </div>
 
                   <h3 className="font-extrabold text-white text-md group-hover:text-brand-primary transition-colors">
                     {client.name}
                   </h3>
-                  <p className="text-xs text-brand-muted mt-1 leading-normal">
-                    {client.niche ? `${client.niche}` : 'Sem nicho preenchido'}
-                  </p>
 
-                  {/* Operational and services indicators inside card */}
-                  <div className="my-4 pt-4 border-t border-brand-border/40 text-[11px] text-brand-muted space-y-2">
-                    <div className="flex justify-between">
-                      <span>Responsável Geral:</span>
-                      <strong className="text-white">{client.responsible || 'Sem responsável'}</strong>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span>Serviços Contratados:</span>
-                      <strong className="text-brand-primary font-bold">{activeServicesCount} ativos</strong>
-                    </div>
-
-                    {client.contractDuration && (
-                      <div className="flex justify-between">
-                        <span>Tempo de Contrato:</span>
-                        <strong className="text-white">{client.contractDuration}</strong>
-                      </div>
-                    )}
+                  {/* Services count */}
+                  <div className="my-4 pt-4 border-t border-brand-border/40 text-[11px] text-brand-muted flex justify-between items-center">
+                    <span>Serviços Contratados:</span>
+                    <strong className="text-brand-primary font-bold">{activeServicesCount} ativos</strong>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-brand-border/40 flex justify-between items-center text-[10px] text-brand-muted">
-                  <span className="flex items-center gap-1">
-                    <CheckSquare size={12} className="text-brand-primary" />
-                    {completedGeneral}/{totalGeneral} tarefas gerais
-                  </span>
-
+                <div className="mt-2 pt-3 border-t border-brand-border/40 flex justify-end items-center text-[10px] text-brand-muted">
                   <span className="text-brand-primary font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
-                    Perfil Completo <Eye size={12} className="ml-1" />
+                    Ver Detalhes <Eye size={12} className="ml-1" />
                   </span>
                 </div>
               </div>
@@ -845,14 +890,13 @@ export default function Clientes() {
                 </button>
               </div>
 
-              {/* 5 INTERNAL TABS NAVIGATION */}
+              {/* 3 INTERNAL TABS NAVIGATION */}
               <div className="flex overflow-x-auto gap-2 p-1 bg-brand-bg border border-brand-border/80 rounded-xl custom-scrollbar">
                 {[
-                  { id: 'perfil', name: 'Perfil do Cliente', icon: User },
-                  { id: 'dossie', name: 'Dossiê Estratégico', icon: Briefcase },
-                  { id: 'servicos', name: 'Serviços Ativos', icon: FolderPlus },
-                  { id: 'operacional', name: 'Operacional', icon: Play },
-                  { id: 'historico', name: 'Histórico & Timeline', icon: Activity }
+                  { id: 'perfil', name: 'Geral', icon: User },
+                  { id: 'dossie', name: 'Dossiê', icon: FileText },
+                  { id: 'servicos', name: 'Serviços Contratados', icon: FolderPlus },
+                  { id: 'historico', name: 'Histórico & Linha do Tempo', icon: Activity }
                 ].map(tab => {
                   const IconComponent = tab.icon;
                   const isActive = modalActiveTab === tab.id;
@@ -878,193 +922,105 @@ export default function Clientes() {
             {/* Modal Content container depending on active tab */}
             <div className="p-6 space-y-6 flex-1">
               
-              {/* TAB 1: PERFIL DO CLIENTE */}
+              {/* TAB 1: GERAL */}
               {modalActiveTab === 'perfil' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
+                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
+                  <div className="bg-brand-bg/40 p-5 rounded-xl border border-brand-border space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nome da Empresa</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nome do Cliente / Empresa</label>
                       <input 
                         type="text" 
                         value={selectedClient.name} 
                         onChange={(e) => updateClientField(selectedClient.id, 'name', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none"
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nicho de Mercado</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.niche || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'niche', e.target.value)}
-                        placeholder="Ex: Clínicas, E-commerce, Logística"
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none"
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Observações Gerais</label>
+                      <textarea 
+                        value={selectedClient.observations || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
+                        placeholder="Escreva notas, lembretes ou informações gerais sobre o cliente..."
+                        rows={10}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Responsável Principal</label>
-                      <select 
-                        value={selectedClient.responsible || 'Neto'} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'responsible', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none"
-                      >
-                        <option value="Neto">Neto</option>
-                        <option value="Gabriel">Gabriel</option>
-                        <option value="Manu">Manu</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Serviços Contratados (Resumo)</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.servicesContracted || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'servicesContracted', e.target.value)}
-                            placeholder="Social Media, Branding, Tráfego"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tempo de Contrato</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.contractDuration || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'contractDuration', e.target.value)}
-                            placeholder="Ex: 6 meses, Anual"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="glass-card p-5">
-                        <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
-                          <Info size={14} className="text-brand-primary" /> Informações Importantes
-                        </label>
-                        <textarea 
-                          value={selectedClient.importantInfo || ''}
-                          onChange={(e) => updateClientField(selectedClient.id, 'importantInfo', e.target.value)}
-                          placeholder="Adicione restrições, observações comerciais críticas, ou dados urgentes..."
-                          rows={4}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="glass-card p-5 flex flex-col justify-between">
-                      <div>
-                        <label className="block text-xs font-bold text-white uppercase mb-2">Observações Gerais</label>
-                        <textarea 
-                          value={selectedClient.observations || ''}
-                          onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
-                          placeholder="Notas operacionais gerais ou lembretes rápidos sobre o cliente..."
-                          rows={8}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* TAB 2: DOSSIÊ (Estudo estratégico) */}
+              {/* TAB 2: DOSSIÊ */}
               {modalActiveTab === 'dossie' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    
-                    <div className="space-y-4 md:col-span-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Público-Alvo</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.targetAudience || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
-                            placeholder="Ex: Mulheres de 25-40 anos"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Concorrentes</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.competitors || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'competitors', e.target.value)}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                      </div>
+                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => exportarDossiePDF(selectedClient)}
+                      className="px-4 py-2 bg-brand-primary/10 hover:bg-brand-primary/20 border border-brand-primary/30 text-brand-primary hover:text-white rounded-lg transition-all flex items-center gap-2 text-xs font-bold shadow-[0_0_15px_rgba(0,255,157,0.1)] hover:scale-105"
+                      title="Exportar como PDF"
+                    >
+                      <FileText size={16} />
+                      Exportar PDF
+                    </button>
+                  </div>
+                  <div className="bg-brand-bg/40 p-5 rounded-xl border border-brand-border space-y-4">
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tom de Voz</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.toneOfVoice || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'toneOfVoice', e.target.value)}
-                            placeholder="Ex: Descontraído..."
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Posicionamento da Marca</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.positioning || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'positioning', e.target.value)}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Dores do Cliente</label>
-                          <textarea 
-                            value={selectedClient.pains || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objeções de Vendas</label>
-                          <textarea 
-                            value={selectedClient.objections || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'objections', e.target.value)}
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                          />
-                        </div>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-bold text-brand-primary uppercase mb-2">Resumo / Quem é o cliente ideal?</label>
+                      <textarea 
+                        value={selectedClient.targetAudience || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
+                        placeholder="Descreva o resumo do cliente e o público que quer alcançar..."
+                        rows={6}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-brand-primary transition-all shadow-inner"
+                      />
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos Principais</label>
-                        <textarea 
-                          value={selectedClient.objectives || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'objectives', e.target.value)}
-                          rows={4}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="glass-card p-4 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <input 
-                            type="checkbox"
-                            checked={selectedClient.briefingComplete || false}
-                            onChange={(e) => updateClientField(selectedClient.id, 'briefingComplete', e.target.checked)}
-                            className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                          />
-                          <span className="text-xs font-bold text-white">Briefing Concluído?</span>
-                        </div>
-                      </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais dores e problemas</label>
+                      <textarea 
+                        value={selectedClient.pains || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
+                        placeholder="O que mais incomoda o cliente ou seus clientes finais?"
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
                     </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">O que o cliente oferece de diferente?</label>
+                      <textarea 
+                        value={selectedClient.differentials || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
+                        placeholder="Diferenciais, pontos fortes, o que destaca ele da concorrência..."
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Concorrentes</label>
+                      <textarea 
+                        value={selectedClient.competitors || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'competitors', e.target.value)}
+                        placeholder="Quem são os concorrentes diretos?"
+                        rows={2}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos e metas</label>
+                      <textarea 
+                        value={selectedClient.objectives || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'objectives', e.target.value)}
+                        placeholder="O que o cliente quer alcançar com nossos serviços?"
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+
 
                   </div>
                 </div>
@@ -1292,97 +1248,7 @@ export default function Clientes() {
                 </div>
               )}
 
-              {/* TAB 4: OPERACIONAL */}
-              {modalActiveTab === 'operacional' && (
-                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Responsáveis Internos</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.internalResponsibles || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'internalResponsibles', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-xs focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Prioridade Geral</label>
-                      <select 
-                        value={selectedClient.priority || 'Média'} 
-                        onChange={(e: any) => updateClientField(selectedClient.id, 'priority', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none"
-                      >
-                        <option value="Baixa">🟢 Baixa</option>
-                        <option value="Média">🟡 Média</option>
-                        <option value="Alta">🔴 Alta</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Calendário (Data Limite)</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.calendarDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'calendarDate', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="glass-card p-5 flex flex-col justify-between min-h-[220px]">
-                      <div>
-                        <label className="block text-xs font-bold text-white uppercase mb-3 flex items-center gap-1.5">
-                          <CheckSquare size={14} className="text-brand-primary" /> Tarefas Operacionais Gerais
-                        </label>
-                        
-                        <div className="space-y-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mb-4">
-                          {selectedClient.generalTasks?.map(gTask => (
-                            <div key={gTask.id} className="flex items-center justify-between p-2 rounded-lg bg-brand-bg/50 border border-brand-border/40">
-                              <div className="flex items-center gap-2">
-                                <input 
-                                  type="checkbox"
-                                  checked={gTask.completed}
-                                  onChange={(e) => handleGeneralTaskToggle(selectedClient.id, gTask.id, e.target.checked)}
-                                  className="w-3.5 h-3.5 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                                />
-                                <span className={`text-[11px] ${gTask.completed ? 'line-through text-brand-muted' : 'text-white'}`}>
-                                  {gTask.text}
-                                </span>
-                              </div>
-                              <button onClick={() => handleDeleteGeneralTask(selectedClient.id, gTask.id)} className="text-brand-danger/60 hover:text-brand-danger p-0.5">
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        const input = (e.target as any).gTaskInput;
-                        handleAddGeneralTask(selectedClient.id, input.value);
-                        input.value = '';
-                      }} className="flex gap-2">
-                        <input type="text" name="gTaskInput" placeholder="Adicionar tarefa operativa..." className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-xs text-white" />
-                        <button type="submit" className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary py-1.5 px-4 rounded-lg text-xs font-bold transition-colors cursor-pointer">Criar</button>
-                      </form>
-                    </div>
-
-                    <div className="glass-card p-5">
-                      <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
-                        <ShieldAlert size={14} className="text-brand-danger" /> Pendências e Impedimentos
-                      </label>
-                      <textarea 
-                        value={selectedClient.pendingIssues || ''}
-                        onChange={(e) => updateClientField(selectedClient.id, 'pendingIssues', e.target.value)}
-                        placeholder="Descreva pendências operacionais aqui..."
-                        rows={6}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* TAB 5: HISTÓRICO & TIMELINE */}
               {modalActiveTab === 'historico' && (

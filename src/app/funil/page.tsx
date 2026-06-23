@@ -163,7 +163,6 @@ const DEFAULT_CLIENTS: Client[] = [];
 
 export default function FunilVendas() {
   const [clients, setClients] = useState<Client[]>([]);
-  const [activeTab, setActiveTab] = useState<'board' | 'cone'>('board');
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -208,48 +207,6 @@ export default function FunilVendas() {
     localStorage.setItem('amitai-funil-v1', JSON.stringify(updatedClients));
   };
 
-  // Drag and Drop
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    e.dataTransfer.setData('text/plain', id);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent, targetStageId: number) => {
-    e.preventDefault();
-    const id = e.dataTransfer.getData('text/plain');
-    if (!id) return;
-
-    const currentClient = clients.find(c => c.id === id);
-    if (!currentClient || currentClient.stageId === targetStageId) return;
-
-    const timestamp = new Date().toLocaleString('pt-BR', { hour12: false }).replace(',', '');
-    const sourceStage = STAGES.find(s => s.id === currentClient.stageId)?.name || 'Desconhecida';
-    const targetStage = STAGES.find(s => s.id === targetStageId)?.name || 'Desconhecida';
-    
-    const newLog: LogItem = {
-      timestamp,
-      action: `Etapa do Funil alterada de "${sourceStage}" para "${targetStage}"`,
-      user: currentClient.responsible || 'Sistema'
-    };
-
-    const updated = clients.map(c => {
-      if (c.id === id) {
-        return {
-          ...c,
-          stageId: targetStageId,
-          timeInStage: 0,
-          history: [newLog, ...c.history],
-          lastUpdated: new Date().toISOString().split('T')[0]
-        };
-      }
-      return c;
-    });
-
-    saveState(updated);
-  };
 
   // Add Client
   const handleAddClient = (e: React.FormEvent) => {
@@ -773,31 +730,6 @@ export default function FunilVendas() {
 
         {/* Action Controls */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-          {/* View toggle tabs */}
-          <div className="bg-brand-card p-1 rounded-xl border border-brand-border flex w-full sm:w-auto">
-            <button 
-              onClick={() => setActiveTab('board')}
-              className={`flex-1 sm:flex-none py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                activeTab === 'board' 
-                  ? 'bg-brand-primary-dim text-brand-primary font-semibold shadow-inner' 
-                  : 'text-brand-muted hover:text-white'
-              }`}
-            >
-              <Layers size={16} />
-              Kanban
-            </button>
-            <button 
-              onClick={() => setActiveTab('cone')}
-              className={`flex-1 sm:flex-none py-2 px-4 rounded-lg font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                activeTab === 'cone' 
-                  ? 'bg-brand-primary-dim text-brand-primary font-semibold shadow-inner' 
-                  : 'text-brand-muted hover:text-white'
-              }`}
-            >
-              <TrendingUp size={16} />
-              Funil (Cone)
-            </button>
-          </div>
 
           <button 
             onClick={() => setIsAddModalOpen(true)}
@@ -827,150 +759,8 @@ export default function FunilVendas() {
         </div>
       </div>
 
-      {/* RENDER KANBAN BOARD */}
-      {activeTab === 'board' && (
-        <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar min-h-[600px] snap-x snap-mandatory">
-          {STAGES.map(stage => {
-            const stageClients = filteredClients.filter(c => c.stageId === stage.id);
-            const stats = getStageStats(stage.id);
-
-            return (
-              <div 
-                key={stage.id} 
-                className="w-80 shrink-0 bg-brand-card/40 rounded-2xl border border-brand-border flex flex-col max-h-[700px] snap-start"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, stage.id)}
-              >
-                {/* Stage Header */}
-                <div className={`p-4 border-b border-brand-border rounded-t-2xl bg-brand-card/90 ${stage.color} flex flex-col gap-1`}>
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-white text-sm tracking-wide truncate max-w-[200px]" title={stage.name}>
-                      {stage.name}
-                    </h3>
-                    <span className="text-xs bg-brand-bg border border-brand-border text-brand-muted px-2 py-0.5 rounded-full font-bold">
-                      {stageClients.length}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-brand-muted truncate" title={stage.desc}>
-                    {stage.desc}
-                  </p>
-                  
-                  {/* Minified metric values */}
-                  {stageClients.length > 0 && (
-                    <div className="flex items-center gap-3 text-[10px] text-brand-primary font-medium mt-1">
-                      <span>Conversão: {stats.conversionRate}%</span>
-                      {stats.avgTime > 0 && <span>Média: {stats.avgTime}d parado</span>}
-                    </div>
-                  )}
-                </div>
-
-                {/* Stage Body - Card list */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-[150px]">
-                  {stageClients.length === 0 ? (
-                    <div className="h-28 flex flex-col items-center justify-center border border-dashed border-brand-border/40 rounded-xl text-center p-4">
-                      <p className="text-xs text-brand-muted/60">Arraste um lead ou clique em "Novo nesta Etapa" para adicionar.</p>
-                    </div>
-                  ) : (
-                    stageClients.map(client => {
-                      const completedTasks = (client.generalTasks || []).filter(t => t.completed).length + (client.servicesList || []).reduce((acc, s) => acc + s.tasks.filter(t => t.completed).length, 0);
-                      const totalTasks = (client.generalTasks || []).length + (client.servicesList || []).reduce((acc, s) => acc + s.tasks.length, 0);
-                      
-                      return (
-                        <div 
-                          key={client.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, client.id)}
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setModalActiveTab('perfil'); // Reset modal active tab to first
-                            setIsModalOpen(true);
-                          }}
-                          className="bg-brand-card border border-brand-border hover:border-brand-primary/30 rounded-xl p-4 cursor-grab active:cursor-grabbing hover:-translate-y-0.5 transition-all duration-300 shadow-md group relative hover:shadow-brand-primary/5"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                              client.status === 'Concluído' ? 'bg-emerald-500/10 text-emerald-400' :
-                              client.status === 'Crítico' ? 'bg-red-500/10 text-red-400' :
-                              client.status === 'Pendente' ? 'bg-amber-500/10 text-amber-400' :
-                              'bg-brand-primary-dim text-brand-primary'
-                            }`}>
-                              {client.status}
-                            </span>
-                            
-                            {client.timeInStage > 5 && (
-                              <span className="flex items-center gap-1 text-[10px] text-brand-danger font-medium" title="Tempo parado longo!">
-                                <Clock size={12} />
-                                {client.timeInStage} dias
-                              </span>
-                            )}
-                          </div>
-
-                          <h4 className="font-semibold text-white text-sm group-hover:text-brand-primary transition-colors pr-6">
-                            {client.name}
-                          </h4>
-
-                          {/* Quick context info inside the card based on Stage */}
-                          <div className="mt-3 pt-3 border-t border-brand-border/40 text-[11px] text-brand-muted space-y-1">
-                            {client.niche && (
-                              <div className="flex justify-between">
-                                <span>Nicho:</span>
-                                <span className="text-white truncate max-w-[120px]">{client.niche}</span>
-                              </div>
-                            )}
-
-                            {client.responsible && (
-                              <div className="flex justify-between">
-                                <span>Responsável:</span>
-                                <span className="text-white font-medium">{client.responsible}</span>
-                              </div>
-                            )}
-
-                            {client.servicesContracted && (
-                              <div className="flex justify-between">
-                                <span>Serviços:</span>
-                                <span className="text-brand-primary truncate max-w-[120px]" title={client.servicesContracted}>{client.servicesContracted}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Action Details Trigger */}
-                          <div className="mt-3 flex justify-between items-center text-[10px] text-brand-muted">
-                            <span className="flex items-center gap-1">
-                              <CheckSquare size={12} />
-                              {completedTasks}/{totalTasks} tarefas
-                            </span>
-                            <span className="text-brand-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-bold">
-                              Ver Detalhes <Eye size={10} />
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {/* Quick Add at bottom */}
-                <div className="p-3 border-t border-brand-border/40 bg-brand-card/20 rounded-b-2xl">
-                  <button 
-                    onClick={() => {
-                      setNewClientStage(stage.id);
-                      setIsAddModalOpen(true);
-                    }}
-                    className="w-full py-1.5 border border-dashed border-brand-border hover:border-brand-primary/40 hover:bg-brand-card/40 rounded-xl text-xs text-brand-muted hover:text-white transition-all flex items-center justify-center gap-1"
-                  >
-                    <Plus size={14} />
-                    Novo nesta Etapa
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* RENDER CONE/FUNNEL VISUALIZATION */}
-      {activeTab === 'cone' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           
           <div className="xl:col-span-2 glass-card p-6 flex flex-col justify-between">
             <div>
@@ -991,11 +781,7 @@ export default function FunilVendas() {
                   return (
                     <div 
                       key={stage.id} 
-                      className="flex items-center justify-between group cursor-pointer"
-                      onClick={() => {
-                        setSearch(stage.name);
-                        setActiveTab('board');
-                      }}
+                      className="flex items-center justify-between group"
                     >
                       <span className="w-48 text-xs font-semibold text-brand-muted group-hover:text-brand-primary transition-colors truncate pr-2">
                         {stage.id}ª. {stage.name}
@@ -1080,7 +866,6 @@ export default function FunilVendas() {
 
           </div>
         </div>
-      )}
 
       {/* RENDER MODAL: EDIT LEAD DETAILS - REDESIGNED WITH 5 TABS! */}
       {isModalOpen && selectedClient && (
@@ -1113,14 +898,12 @@ export default function FunilVendas() {
                 </button>
               </div>
 
-              {/* 5 INTERNAL TABS NAVIGATION */}
+              {/* 3 INTERNAL TABS NAVIGATION */}
               <div className="flex overflow-x-auto gap-2 p-1 bg-brand-bg border border-brand-border/80 rounded-xl custom-scrollbar">
                 {[
-                  { id: 'perfil', name: 'Perfil do Cliente', icon: User },
-                  { id: 'dossie', name: 'Dossiê Estratégico', icon: Briefcase },
-                  { id: 'servicos', name: 'Serviços Ativos', icon: FolderPlus },
-                  { id: 'operacional', name: 'Operacional', icon: Play },
-                  { id: 'historico', name: 'Histórico & Timeline', icon: Activity }
+                  { id: 'perfil', name: 'Geral', icon: User },
+                  { id: 'servicos', name: 'Serviços Contratados', icon: FolderPlus },
+                  { id: 'historico', name: 'Histórico & Linha do Tempo', icon: Activity }
                 ].map(tab => {
                   const IconComponent = tab.icon;
                   const isActive = modalActiveTab === tab.id;
@@ -1146,12 +929,12 @@ export default function FunilVendas() {
             {/* Modal Content container depending on active tab */}
             <div className="p-6 space-y-6 flex-1">
               
-              {/* TAB 1: PERFIL DO CLIENTE */}
+              {/* TAB 1: GERAL */}
               {modalActiveTab === 'perfil' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
+                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
+                  <div className="bg-brand-bg/40 p-5 rounded-xl border border-brand-border space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nome da Empresa</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nome do Cliente / Empresa</label>
                       <input 
                         type="text" 
                         value={selectedClient.name} 
@@ -1159,259 +942,17 @@ export default function FunilVendas() {
                         className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Nicho de Mercado</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.niche || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'niche', e.target.value)}
-                        placeholder="Ex: Clínicas, E-commerce, Logística"
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Observações Gerais</label>
+                      <textarea 
+                        value={selectedClient.observations || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
+                        placeholder="Escreva notas, lembretes ou informações gerais sobre o cliente..."
+                        rows={10}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Responsável Comercial</label>
-                      <select 
-                        value={selectedClient.responsible || 'Neto'} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'responsible', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
-                      >
-                        <option value="Neto">Neto</option>
-                        <option value="Gabriel">Gabriel</option>
-                        <option value="Manu">Manu</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Serviços Contratados (Resumo)</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.servicesContracted || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'servicesContracted', e.target.value)}
-                            placeholder="Social Media, Branding, Tráfego"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tempo de Contrato</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.contractDuration || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'contractDuration', e.target.value)}
-                            placeholder="Ex: 6 meses, Anual"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none focus:border-brand-primary text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="glass-card p-5">
-                        <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
-                          <Info size={14} className="text-brand-primary" /> Informações Importantes
-                        </label>
-                        <textarea 
-                          value={selectedClient.importantInfo || ''}
-                          onChange={(e) => updateClientField(selectedClient.id, 'importantInfo', e.target.value)}
-                          placeholder="Adicione restrições, observações comerciais críticas, ou dados urgentes sobre faturamento e cobrança..."
-                          rows={4}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Observations Sidebar */}
-                    <div className="glass-card p-5 flex flex-col justify-between">
-                      <div>
-                        <label className="block text-xs font-bold text-white uppercase mb-2">Observações Gerais</label>
-                        <textarea 
-                          value={selectedClient.observations || ''}
-                          onChange={(e) => updateClientField(selectedClient.id, 'observations', e.target.value)}
-                          placeholder="Notas operacionais gerais ou lembretes rápidos sobre o cliente..."
-                          rows={8}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stage Details quick sync settings */}
-                  <div className="p-4 bg-brand-bg/40 border border-brand-border rounded-xl text-xs space-y-3">
-                    <h4 className="font-bold text-white uppercase">Informações do Funil Comercial</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div>
-                        <span className="text-brand-muted block mb-0.5">Etapa no Funil:</span>
-                        <strong className="text-brand-primary">{STAGES.find(s => s.id === selectedClient.stageId)?.name}</strong>
-                      </div>
-                      <div>
-                        <span className="text-brand-muted block mb-0.5">Status do Lead:</span>
-                        <strong className="text-white">{selectedClient.status}</strong>
-                      </div>
-                      <div>
-                        <span className="text-brand-muted block mb-0.5">Criado em:</span>
-                        <strong className="text-white">{selectedClient.createdAt.split('-').reverse().join('/')}</strong>
-                      </div>
-                      <div>
-                        <span className="text-brand-muted block mb-0.5">Dias na etapa:</span>
-                        <strong className="text-white">{selectedClient.timeInStage} dias</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: DOSSIÊ (Estudo estratégico) */}
-              {modalActiveTab === 'dossie' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    
-                    <div className="space-y-4 md:col-span-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Público-Alvo</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.targetAudience || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
-                            placeholder="Ex: Mulheres de 25-40 anos classe A"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Concorrentes</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.competitors || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'competitors', e.target.value)}
-                            placeholder="Ex: Marca X, Concorrente Y"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Tom de Voz</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.toneOfVoice || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'toneOfVoice', e.target.value)}
-                            placeholder="Ex: Sério e autoritário, Descontraído..."
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Posicionamento da Marca</label>
-                          <input 
-                            type="text" 
-                            value={selectedClient.positioning || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'positioning', e.target.value)}
-                            placeholder="Ex: Líder em inovação, Mais acessível"
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Dores do Cliente</label>
-                          <textarea 
-                            value={selectedClient.pains || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
-                            placeholder="Falta de constância no WhatsApp, leads desqualificados..."
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objeções de Vendas</label>
-                          <textarea 
-                            value={selectedClient.objections || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'objections', e.target.value)}
-                            placeholder="Acharam o setup inicial um pouco alto, dúvida de suporte..."
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Diferenciais Operacionais</label>
-                          <textarea 
-                            value={selectedClient.differentials || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
-                            placeholder="Atendimento humanizado em menos de 10 min, suporte total do sócio..."
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Ofertas</label>
-                          <textarea 
-                            value={selectedClient.offers || ''} 
-                            onChange={(e) => updateClientField(selectedClient.id, 'offers', e.target.value)}
-                            placeholder="Mentoria exclusiva grátis para fechamento imediato..."
-                            rows={3}
-                            className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Column 3: Briefing & Extra Info */}
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos Principais</label>
-                        <textarea 
-                          value={selectedClient.objectives || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'objectives', e.target.value)}
-                          placeholder="Aumentar faturamento em 30% no primeiro trimestre operacional..."
-                          rows={4}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Estratégias Comerciais Anteriores</label>
-                        <textarea 
-                          value={selectedClient.previousStrategies || ''} 
-                          onChange={(e) => updateClientField(selectedClient.id, 'previousStrategies', e.target.value)}
-                          placeholder="Tentaram prospecção fria interna mas faltou constância..."
-                          rows={4}
-                          className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                        />
-                      </div>
-
-                      <div className="glass-card p-4 space-y-4">
-                        <div className="flex items-center gap-3">
-                          <input 
-                            type="checkbox"
-                            checked={selectedClient.briefingComplete || false}
-                            onChange={(e) => updateClientField(selectedClient.id, 'briefingComplete', e.target.checked)}
-                            className="w-4 h-4 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                          />
-                          <span className="text-xs font-bold text-white">Briefing Estratégico Concluído?</span>
-                        </div>
-                        <p className="text-[10px] text-brand-muted leading-relaxed">
-                          Marque para sinalizar no painel que o dossiê básico de inteligência do cliente foi finalizado.
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
-
-                  <div className="glass-card p-5">
-                    <label className="block text-xs font-bold text-white uppercase mb-2">Observações Estratégicas</label>
-                    <textarea 
-                      value={selectedClient.strategicObservations || ''} 
-                      onChange={(e) => updateClientField(selectedClient.id, 'strategicObservations', e.target.value)}
-                      placeholder="Adicione ideias estratégicas adicionais levantadas durante sessões de brainstorming da Amitai..."
-                      rows={3}
-                      className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                    />
                   </div>
                 </div>
               )}
@@ -1715,142 +1256,7 @@ export default function FunilVendas() {
                 </div>
               )}
 
-              {/* TAB 4: OPERACIONAL */}
-              {modalActiveTab === 'operacional' && (
-                <div className="space-y-6 animate-in fade-in duration-300 text-xs">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-brand-bg/40 p-4 rounded-xl border border-brand-border">
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Responsáveis Internos Ativos</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.internalResponsibles || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'internalResponsibles', e.target.value)}
-                        placeholder="Ex: Gabriel & Neto"
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-xs focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Prioridade Geral</label>
-                      <select 
-                        value={selectedClient.priority || 'Média'} 
-                        onChange={(e: any) => updateClientField(selectedClient.id, 'priority', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white focus:outline-none"
-                      >
-                        <option value="Baixa">🟢 Baixa</option>
-                        <option value="Média">🟡 Média</option>
-                        <option value="Alta">🔴 Alta</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-brand-muted uppercase mb-1.5">Calendário (Data Limite Geral)</label>
-                      <input 
-                        type="date" 
-                        value={selectedClient.calendarDate || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'calendarDate', e.target.value)}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* General Tasks List */}
-                    <div className="glass-card p-5 flex flex-col justify-between min-h-[220px]">
-                      <div>
-                        <label className="block text-xs font-bold text-white uppercase mb-3 flex items-center gap-1.5">
-                          <CheckSquare size={14} className="text-brand-primary" /> Tarefas Operacionais Gerais
-                        </label>
-                        
-                        <div className="space-y-1.5 max-h-[140px] overflow-y-auto custom-scrollbar pr-1 mb-4">
-                          {(!selectedClient.generalTasks || selectedClient.generalTasks.length === 0) ? (
-                            <p className="text-xs text-brand-muted italic">Nenhuma atividade operacional agendada.</p>
-                          ) : (
-                            selectedClient.generalTasks.map(gTask => (
-                              <div key={gTask.id} className="flex items-center justify-between p-2 rounded-lg bg-brand-bg/50 border border-brand-border/40">
-                                <div className="flex items-center gap-2">
-                                  <input 
-                                    type="checkbox"
-                                    checked={gTask.completed}
-                                    onChange={(e) => handleGeneralTaskToggle(selectedClient.id, gTask.id, e.target.checked)}
-                                    className="w-3.5 h-3.5 rounded text-brand-primary focus:ring-brand-primary bg-brand-bg border-brand-border"
-                                  />
-                                  <span className={`text-[11px] ${gTask.completed ? 'line-through text-brand-muted' : 'text-white'}`}>
-                                    {gTask.text}
-                                  </span>
-                                </div>
-                                <button 
-                                  onClick={() => handleDeleteGeneralTask(selectedClient.id, gTask.id)}
-                                  className="text-brand-danger/60 hover:text-brand-danger p-0.5"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Add General Task Form */}
-                      <form onSubmit={(e) => {
-                        e.preventDefault();
-                        const input = (e.target as any).gTaskInput;
-                        handleAddGeneralTask(selectedClient.id, input.value);
-                        input.value = '';
-                      }} className="flex gap-2">
-                        <input 
-                          type="text"
-                          name="gTaskInput"
-                          placeholder="Adicionar tarefa operativa..."
-                          className="flex-1 bg-brand-bg border border-brand-border rounded-lg py-1.5 px-3 text-xs text-white"
-                        />
-                        <button 
-                          type="submit"
-                          className="bg-brand-primary-dim hover:bg-brand-primary hover:text-brand-bg text-brand-primary py-1.5 px-4 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          Criar
-                        </button>
-                      </form>
-                    </div>
-
-                    {/* Pending Operational Issues */}
-                    <div className="glass-card p-5">
-                      <label className="block text-xs font-bold text-white uppercase mb-2 flex items-center gap-1.5">
-                        <ShieldAlert size={14} className="text-brand-danger" /> Pendências e Impedimentos Críticos
-                      </label>
-                      <textarea 
-                        value={selectedClient.pendingIssues || ''}
-                        onChange={(e) => updateClientField(selectedClient.id, 'pendingIssues', e.target.value)}
-                        placeholder="Descreva pendências que impedem o andamento operacional (ex: Aguardando logo vetorizada do cliente, conta de tráfego suspensa pelo Facebook...)"
-                        rows={6}
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-brand-primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-bold text-white uppercase mb-1.5">Andamento Operacional (Geral)</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.operationalProgress || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'operationalProgress', e.target.value)}
-                        placeholder="Ex: Landing Page concluída, iniciando anúncios de conversão..."
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-white uppercase mb-1.5">Observações Internas (Segredo de Equipe)</label>
-                      <input 
-                        type="text" 
-                        value={selectedClient.internalObservations || ''} 
-                        onChange={(e) => updateClientField(selectedClient.id, 'internalObservations', e.target.value)}
-                        placeholder="Ex: O cliente tem problemas em pagar no prazo, cobrar com 3 dias de antecedência"
-                        className="w-full bg-brand-bg border border-brand-border rounded-xl py-2 px-3 text-xs text-white focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* TAB 5: HISTÓRICO & TIMELINE */}
               {modalActiveTab === 'historico' && (
