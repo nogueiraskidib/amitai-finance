@@ -90,6 +90,15 @@ interface Client {
 
   // TAB 2: DOSSIÊ
   targetAudience?: string;
+  persona?: string;
+  funnelStage?: string;
+  awarenessLevel?: string;
+  copyObjective?: string;
+  channel?: string;
+  socialProof?: string;
+  desiredCTA?: string;
+  extraInfo?: string;
+  copyStructure?: string;
   pains?: string;
   objections?: string;
   differentials?: string;
@@ -610,27 +619,68 @@ export default function Clientes() {
         </div>
 
         <div class="section">
-          <div class="section-title">Resumo do Cliente / Público Ideal</div>
+          <div class="section-title">1. Nicho</div>
+          <div class="content-box">${client.niche || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">2. ICP (Cliente Ideal)</div>
           <div class="content-box">${client.targetAudience || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">3. Persona</div>
+          <div class="content-box">${client.persona || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">4. Etapa do Funil</div>
+          <div class="content-box">${client.funnelStage || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">5. Nível de Consciência do Público</div>
+          <div class="content-box">${client.awarenessLevel || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">6. Objetivo da Copy</div>
+          <div class="content-box">${client.copyObjective || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">7. Canal</div>
+          <div class="content-box">${client.channel || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">8. Benefícios/Diferenciais do Produto</div>
+          <div class="content-box">${client.differentials || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">9. Provas Sociais</div>
+          <div class="content-box">${client.socialProof || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">10. Objeções Comuns</div>
+          <div class="content-box">${client.objections || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">11. CTA Desejado</div>
+          <div class="content-box">${client.desiredCTA || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">12. Informações Extras</div>
+          <div class="content-box">${client.extraInfo || 'Não informado'}</div>
+        </div>
+        <div class="section">
+          <div class="section-title">13. Estrutura de Copy</div>
+          <div class="content-box">${client.copyStructure || 'Não informado'}</div>
         </div>
 
         <div class="section">
           <div class="section-title">Principais Dores e Problemas</div>
           <div class="content-box">${client.pains || 'Não informado'}</div>
         </div>
-
-        <div class="section">
-          <div class="section-title">O que o cliente oferece de diferente?</div>
-          <div class="content-box">${client.differentials || 'Não informado'}</div>
-        </div>
-
         <div class="section">
           <div class="section-title">Concorrentes</div>
           <div class="content-box">${client.competitors || 'Não informado'}</div>
         </div>
-
         <div class="section">
-          <div class="section-title">Objetivos e Metas</div>
+          <div class="section-title">Objetivos e Metas Gerais</div>
           <div class="content-box">${client.objectives || 'Não informado'}</div>
         </div>
 
@@ -965,35 +1015,188 @@ export default function Clientes() {
                   </div>
                   <div className="bg-brand-bg/40 p-5 rounded-xl border border-brand-border space-y-4">
 
-                    <div>
-                      <label className="block text-sm font-bold text-brand-primary uppercase mb-2">Resumo / Quem é o cliente ideal?</label>
-                      <textarea 
-                        value={selectedClient.targetAudience || ''}
-                        onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
-                        placeholder="Descreva o resumo do cliente e o público que quer alcançar..."
-                        rows={6}
-                        className="w-full bg-brand-card border border-brand-border rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-brand-primary transition-all shadow-inner"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">1. Nicho</label>
+                        <input 
+                          type="text"
+                          value={selectedClient.niche || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'niche', e.target.value)}
+                          placeholder="Ex: Saúde, Finanças, e-Commerce..."
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">2. ICP (Cliente Ideal)</label>
+                        <input 
+                          type="text"
+                          value={selectedClient.targetAudience || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'targetAudience', e.target.value)}
+                          placeholder="Ex: Clínicas odontológicas de médio porte..."
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais dores e problemas</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">3. Persona</label>
                       <textarea 
-                        value={selectedClient.pains || ''}
-                        onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
-                        placeholder="O que mais incomoda o cliente ou seus clientes finais?"
+                        value={selectedClient.persona || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'persona', e.target.value)}
+                        placeholder="Descreva a persona do cliente detalhadamente..."
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">4. Etapa do Funil</label>
+                        <select 
+                          value={selectedClient.funnelStage || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'funnelStage', e.target.value)}
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Topo de Funil (Consciência)">Topo de Funil (Consciência)</option>
+                          <option value="Meio de Funil (Consideração)">Meio de Funil (Consideração)</option>
+                          <option value="Fundo de Funil (Decisão)">Fundo de Funil (Decisão)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">5. Nível de Consciência</label>
+                        <select 
+                          value={selectedClient.awarenessLevel || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'awarenessLevel', e.target.value)}
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Totalmente Inconsciente">Totalmente Inconsciente</option>
+                          <option value="Consciente do Problema">Consciente do Problema</option>
+                          <option value="Consciente da Solução">Consciente da Solução</option>
+                          <option value="Consciente do Produto">Consciente do Produto</option>
+                          <option value="Totalmente Consciente">Totalmente Consciente</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">6. Objetivo da Copy</label>
+                        <select 
+                          value={selectedClient.copyObjective || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'copyObjective', e.target.value)}
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Vender">Vender</option>
+                          <option value="Gerar Leads">Gerar Leads</option>
+                          <option value="Mensagens no WhatsApp">Mensagens no WhatsApp</option>
+                          <option value="Engajamento">Engajamento</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">7. Canal Principal</label>
+                        <select 
+                          value={selectedClient.channel || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'channel', e.target.value)}
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Feed / Reels">Feed / Reels</option>
+                          <option value="Facebook / Instagram Ads">Facebook / Instagram Ads</option>
+                          <option value="Marketplace">Marketplace</option>
+                          <option value="Grupo / Comunidade">Grupo / Comunidade</option>
+                          <option value="Página de Vendas">Página de Vendas</option>
+                          <option value="Messenger / Direct">Messenger / Direct</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">8. Benefícios / Diferenciais</label>
+                      <textarea 
+                        value={selectedClient.differentials || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
+                        placeholder="O que o cliente oferece de diferente?"
                         rows={3}
                         className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">O que o cliente oferece de diferente?</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">9. Provas Sociais</label>
                       <textarea 
-                        value={selectedClient.differentials || ''}
-                        onChange={(e) => updateClientField(selectedClient.id, 'differentials', e.target.value)}
-                        placeholder="Diferenciais, pontos fortes, o que destaca ele da concorrência..."
+                        value={selectedClient.socialProof || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'socialProof', e.target.value)}
+                        placeholder="Cases de sucesso, depoimentos fortes..."
                         rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">10. Objeções Comuns</label>
+                      <textarea 
+                        value={selectedClient.objections || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'objections', e.target.value)}
+                        placeholder="Quais as objeções mais comuns na hora da venda?"
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">11. CTA Desejado</label>
+                        <input 
+                          type="text"
+                          value={selectedClient.desiredCTA || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'desiredCTA', e.target.value)}
+                          placeholder="Ex: Clique no link da bio, Compre agora..."
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">13. Estrutura de Copy</label>
+                        <select 
+                          value={selectedClient.copyStructure || ''}
+                          onChange={(e) => updateClientField(selectedClient.id, 'copyStructure', e.target.value)}
+                          className="w-full bg-brand-card border border-brand-border rounded-xl py-2 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="AIDA">AIDA</option>
+                          <option value="PAS">PAS</option>
+                          <option value="BAB">BAB</option>
+                          <option value="QUEST">QUEST</option>
+                          <option value="PASTOR">PASTOR</option>
+                          <option value="4Ps">4Ps</option>
+                          <option value="4Us">4Us</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">12. Informações Extras</label>
+                      <textarea 
+                        value={selectedClient.extraInfo || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'extraInfo', e.target.value)}
+                        placeholder="Outras informações relevantes..."
+                        rows={3}
+                        className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <hr className="border-brand-border/40 my-2" />
+
+                    <div>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Principais Dores</label>
+                      <textarea 
+                        value={selectedClient.pains || ''}
+                        onChange={(e) => updateClientField(selectedClient.id, 'pains', e.target.value)}
+                        placeholder="O que mais incomoda o cliente ou seus clientes finais?"
+                        rows={2}
                         className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
@@ -1010,17 +1213,15 @@ export default function Clientes() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos e metas</label>
+                      <label className="block text-xs font-semibold text-brand-muted uppercase mb-1.5">Objetivos e metas (Gerais)</label>
                       <textarea 
                         value={selectedClient.objectives || ''}
                         onChange={(e) => updateClientField(selectedClient.id, 'objectives', e.target.value)}
                         placeholder="O que o cliente quer alcançar com nossos serviços?"
-                        rows={3}
+                        rows={2}
                         className="w-full bg-brand-card border border-brand-border rounded-xl py-2.5 px-3 text-white text-sm focus:outline-none focus:border-brand-primary"
                       />
                     </div>
-
-
 
                   </div>
                 </div>
