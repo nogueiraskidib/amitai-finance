@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,7 +14,7 @@ const navItems = [
   { name: 'Clientes', href: '/clientes', icon: Users, color: 'text-brand-accent-purple' },
   { name: 'Processos', href: '/processos', icon: Workflow, color: 'text-brand-accent-amber' },
   { name: 'Fechamento', href: '/fechamento', icon: CalendarCheck, color: 'text-emerald-400' },
-  { name: 'Histórico', href: '/historico', icon: History, color: 'text-brand-muted' },
+  { name: 'HistÃ³rico', href: '/historico', icon: History, color: 'text-brand-muted' },
   { name: 'Registrar Entrada', href: '/registrar-entrada', icon: PlusCircle, color: 'text-green-400' },
   { name: 'Registrar Gasto', href: '/registrar-gasto', icon: MinusCircle, color: 'text-brand-danger' },
 ];
@@ -35,22 +35,18 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-7" style={{ borderBottom: '1px solid rgba(21, 32, 53, 0.8)' }}>
         <div className="flex items-center gap-3">
-          {/* Brand Icon */}
+          {/* Brand Logo */}
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black"
-            style={{
-              background: 'linear-gradient(135deg, #00ff9d 0%, #00d97a 100%)',
-              color: '#030e1a',
-              boxShadow: '0 4px 16px rgba(0,255,157,0.35)',
-            }}
+            className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
+            style={{ border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}
           >
-            A
+            <img src="/logo.jpeg" alt="Amitai Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-[15px] font-bold leading-tight" style={{ color: '#e8f0fe' }}>
               Amitai<span className="text-gradient"> Finance</span>
             </h1>
-            <p className="text-[10px]" style={{ color: '#4a6080' }}>ERP Agência</p>
+            <p className="text-[10px]" style={{ color: '#4a6080' }}>ERP AgÃªncia</p>
           </div>
         </div>
       </div>
