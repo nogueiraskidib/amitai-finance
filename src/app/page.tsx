@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { 
   DollarSign, 
@@ -304,7 +304,7 @@ export default function Dashboard() {
   const activeClientsCount = funnelClients.filter(c => c.stageId === 7 || c.stageId === 9 || c.stageId === 12).length;
   const onboardingClientsCount = funnelClients.filter(c => c.stageId === 4 || c.stageId === 5 || c.stageId === 6).length;
   const lateClientsCount = funnelClients.filter(c => 
-    c.stageId === 7 && (c.status === 'Crítico' || c.timeInStage > 10)
+    c.stageId === 7 && (c.status === 'CrÃ­tico' || c.timeInStage > 10)
   ).length;
 
   // PROSPECTION ranking (Strictly counts REAL active leads by partner)
@@ -317,10 +317,10 @@ export default function Dashboard() {
 
   // OPERATION metrics
   const overdueTasksCount = funnelClients.reduce((acc, c) => acc + c.tasks.filter(t => !t.completed).length, 0);
-  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'Crítico').length;
+  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'CrÃ­tico').length;
   const pendingDeliveriesCount = funnelClients.filter(c => c.stageId === 7 && c.progress !== undefined && c.progress < 100).length;
 
-  // FINANCIAL PREVISÃO (Faturamento + Expected contract closures)
+  // FINANCIAL PREVISÃƒO (Faturamento + Expected contract closures)
   const sumForecastValues = funnelClients.reduce((acc, c) => {
     if ((c.stageId === 3 || c.stageId === 4) && c.contractValue) {
       const numericValue = parseFloat(c.contractValue.replace(/[^\d]/g, '')) / 100;
@@ -337,24 +337,24 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 custom-scrollbar">
+    <div className="space-y-6 animate-page pb-12 custom-scrollbar overflow-y-auto">
       
       {/* Dashboard Top Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard Principal</h1>
-          <p className="text-brand-muted mt-1">Visão geral do faturamento, processos e performance real da Amitai.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-gradient">Dashboard Principal</h1>
+          <p className="text-brand-muted mt-1">VisÃ£o geral do faturamento, processos e performance real da Amitai.</p>
         </div>
         <DateFilter />
       </header>
 
-      {/* FINANCEIRO RÁPIDO (4 Key Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-brand-primary glow-primary block hover:scale-[1.02] transition-all cursor-pointer">
+      {/* FINANCEIRO RÃPIDO (4 Key Cards) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Faturamento Mês</p>
-              <h3 className="text-3xl font-black mt-2 text-gradient">
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Faturamento MÃªs</p>
+              <h3 className="text-2xl font-black text-gradient leading-tight">
                 {loading ? '...' : `R$ ${totalEntradas.toFixed(2).replace('.', ',')}`}
               </h3>
               <span className="text-[10px] text-brand-primary font-semibold mt-1 block">Total faturado</span>
@@ -365,11 +365,11 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-blue-500 block hover:scale-[1.02] transition-all cursor-pointer">
+        <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Lucro Líquido</p>
-              <h3 className="text-2xl font-black mt-2 text-white">
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Lucro LÃ­quido</p>
+              <h3 className="text-2xl font-black leading-tight">
                 {loading ? '...' : `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`}
               </h3>
               <span className="text-[10px] text-blue-400 font-semibold mt-1 block">Lucro real</span>
@@ -380,11 +380,11 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-red-500 block hover:scale-[1.02] transition-all cursor-pointer">
+        <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Despesas / Gastos</p>
-              <h3 className="text-2xl font-black mt-2 text-white">
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Despesas / Gastos</p>
+              <h3 className="text-2xl font-black leading-tight">
                 {loading ? '...' : `R$ ${totalGastos.toFixed(2).replace('.', ',')}`}
               </h3>
               <span className="text-[10px] text-brand-danger font-semibold mt-1 block">Total de gastos</span>
@@ -395,14 +395,14 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <Link href="/fechamento" className="glass-card p-6 border-l-4 border-l-purple-500 block hover:scale-[1.02] transition-all cursor-pointer">
+        <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-brand-muted text-[11px] font-bold uppercase tracking-wider">Previsão Financeira</p>
-              <h3 className="text-2xl font-black mt-2 text-white">
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>PrevisÃ£o Financeira</p>
+              <h3 className="text-2xl font-black leading-tight">
                 {loading ? '...' : `R$ ${previsaoFaturamento.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Previsão com novos contratos</span>
+              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">PrevisÃ£o com novos contratos</span>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Wallet className="text-purple-500" size={20} />
@@ -411,11 +411,11 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* METRIC COLUMNS: COMERCIAL, CLIENTES, PROSPECÇÃO, OPERAÇÃO */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* METRIC COLUMNS: COMERCIAL, CLIENTES, PROSPECÃ‡ÃƒO, OPERAÃ‡ÃƒO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* 1. COMERCIAL */}
-        <Link href="/funil" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
+        <Link href="/funil" className="glass-card p-5 block cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <MessageSquare size={16} className="text-cyan-400" />
             Funil de Vendas
@@ -426,7 +426,7 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{newLeadsCount}</span>
             </div>
             <div className="flex justify-between items-center py-1">
-              <span className="text-xs text-brand-muted font-medium">Reuniões (Etapa 2)</span>
+              <span className="text-xs text-brand-muted font-medium">ReuniÃµes (Etapa 2)</span>
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{meetingsCount}</span>
             </div>
             <div className="flex justify-between items-center py-1">
@@ -437,7 +437,7 @@ export default function Dashboard() {
         </Link>
 
         {/* 2. CLIENTES */}
-        <Link href="/clientes" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
+        <Link href="/clientes" className="glass-card p-5 block cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Users size={16} className="text-indigo-400" />
             Clientes Ativos
@@ -458,11 +458,11 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        {/* 3. PROSPECÇÃO (SÓCIOS RANKING REAL) */}
-        <div className="glass-card p-5 space-y-4">
+        {/* 3. PROSPECÃ‡ÃƒO (SÃ“CIOS RANKING REAL) */}
+        <div className="glass-card p-5">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Target size={16} className="text-purple-400" />
-            Contatos por Sócio
+            Contatos por SÃ³cio
           </h4>
           <div className="space-y-3">
             {partnersRanking.map((partner, idx) => (
@@ -481,8 +481,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 4. OPERAÇÃO */}
-        <Link href="/processos?tab=interno" className="glass-card p-5 space-y-4 block hover:scale-[1.02] transition-all cursor-pointer">
+        {/* 4. OPERAÃ‡ÃƒO */}
+        <Link href="/processos?tab=interno" className="glass-card p-5 block cursor-pointer">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <CheckSquare size={16} className="text-pink-400" />
             Tarefas & Entregas
@@ -505,7 +505,7 @@ export default function Dashboard() {
 
       </div>
 
-      {/* PROGRESSO DOS SÓCIOS PROSPECÇÃO (FULLY EDITABLE!) */}
+      {/* PROGRESSO DOS SÃ“CIOS PROSPECÃ‡ÃƒO (FULLY EDITABLE!) */}
       <div className="grid grid-cols-1 gap-6">
         
         {/* Partners Daily Progress Card */}
@@ -580,16 +580,16 @@ export default function Dashboard() {
       </div>
 
       {/* Financial Performance Chart (Recharts) */}
-      <div className="glass-card p-6 min-h-[400px] flex flex-col">
+      <div className="glass-card p-6 flex flex-col min-h-[320px]">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="text-brand-primary" size={20} />
-          <h3 className="text-xl font-bold text-white">Entradas e Gastos do Mês</h3>
+          <h3 className="text-xl font-bold text-white">Entradas e Gastos do MÃªs</h3>
         </div>
         
         <div className="flex-1 w-full min-h-[300px]">
           {loading ? (
             <div className="w-full h-full flex items-center justify-center text-brand-muted">
-              Carregando gráfico...
+              Carregando grÃ¡fico...
             </div>
           ) : chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -629,7 +629,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-brand-muted">
-              Sem dados para exibir no período selecionado.
+              Sem dados para exibir no perÃ­odo selecionado.
             </div>
           )}
         </div>
@@ -637,7 +637,7 @@ export default function Dashboard() {
 
       {/* Partners Payout Balances */}
       <div className="space-y-3">
-        <h3 className="text-lg font-bold text-white">Saldos dos Sócios (Fechamento)</h3>
+        <h3 className="text-lg font-bold text-white">Saldos dos SÃ³cios (Fechamento)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {partners.map((partner) => (
             <Link 
