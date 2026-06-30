@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { 
   Users, 
@@ -164,21 +165,37 @@ export default function Clientes() {
 
   // Load and save state
   useEffect(() => {
-    const saved = localStorage.getItem('amitai-funil-v1');
-    if (saved) {
-      try {
-        setClients(JSON.parse(saved));
-      } catch (e) {
+    async function fetchClients() {
+      const { data } = await supabase.from('clientes').select('*');
+      if (data && data.length > 0) {
+        setClients(data as Client[]);
+      } else {
         setClients([]);
       }
-    } else {
-      setClients([]);
     }
+    fetchClients();
   }, []);
 
-  const saveState = (updatedClients: Client[]) => {
+  const saveState = async (updatedClients: Client[]) => {
     setClients(updatedClients);
-    localStorage.setItem('amitai-funil-v1', JSON.stringify(updatedClients));
+    for (const c of updatedClients) {
+      await supabase.from('clientes').upsert({
+        id: c.id,
+        name: c.name,
+        stageId: c.stageId,
+        timeInStage: c.timeInStage,
+        status: c.status,
+        tasks: c.tasks,
+        history: c.history,
+        createdAt: c.createdAt,
+        lastUpdated: c.lastUpdated,
+        responsible: c.responsible,
+        contractValue: c.contractValue,
+        assetsChecklist: c.assetsChecklist,
+        operationalChecklist: c.operationalChecklist,
+        progress: c.progress
+      });
+    }
   };
 
   // Update Client Fields

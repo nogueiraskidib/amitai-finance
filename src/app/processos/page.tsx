@@ -2,6 +2,7 @@
 
 // Vercel trigger deploy
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { 
   Workflow, 
   Plus, 
@@ -726,35 +727,26 @@ export default function ProcessosPage() {
   // New general task state inside integrante drawer
   const [newGeneralTask, setNewGeneralTask] = useState('');
 
-  // Load from local storage or set default ones
+  // Load from Supabase or set default ones
   useEffect(() => {
-    // 1. Processos
-    const savedProcessos = localStorage.getItem('erp_amitai_processos_v3');
-    if (savedProcessos) {
-      try {
-        setProcessos(JSON.parse(savedProcessos));
-      } catch (e) {
+    async function loadData() {
+      // 1. Processos
+      const { data: processosData } = await supabase.from('processos').select('*');
+      if (processosData && processosData.length > 0) {
+        setProcessos(processosData as Processo[]);
+      } else {
         setProcessos(DEFAULT_PROCESSOS);
-        localStorage.setItem('erp_amitai_processos_v3', JSON.stringify(DEFAULT_PROCESSOS));
       }
-    } else {
-      setProcessos(DEFAULT_PROCESSOS);
-      localStorage.setItem('erp_amitai_processos_v3', JSON.stringify(DEFAULT_PROCESSOS));
-    }
 
-    // 2. Integrantes
-    const savedIntegrantes = localStorage.getItem('erp_amitai_integrantes');
-    if (savedIntegrantes) {
-      try {
-        setIntegrantes(JSON.parse(savedIntegrantes));
-      } catch (e) {
+      // 2. Integrantes
+      const { data: integrantesData } = await supabase.from('integrantes').select('*');
+      if (integrantesData && integrantesData.length > 0) {
+        setIntegrantes(integrantesData as Integrante[]);
+      } else {
         setIntegrantes(DEFAULT_INTEGRANTES);
-        localStorage.setItem('erp_amitai_integrantes', JSON.stringify(DEFAULT_INTEGRANTES));
       }
-    } else {
-      setIntegrantes(DEFAULT_INTEGRANTES);
-      localStorage.setItem('erp_amitai_integrantes', JSON.stringify(DEFAULT_INTEGRANTES));
     }
+    loadData();
   }, []);
 
   // Handle URL query parameters for active tab and selected member details
@@ -778,9 +770,21 @@ export default function ProcessosPage() {
   }, [integrantes]);
 
   // Save changes to processes
-  const saveProcessos = (updated: Processo[]) => {
+  const saveProcessos = async (updated: Processo[]) => {
     setProcessos(updated);
-    localStorage.setItem('erp_amitai_processos_v3', JSON.stringify(updated));
+    for (const p of updated) {
+      await supabase.from('processos').upsert({
+        id: p.id,
+        title: p.nome,
+        description: p.descricao,
+        author: p.responsavel,
+        assignedTo: p.responsavel,
+        status: p.status,
+        history: p.checklist,
+        attachments: p.materiais,
+        comments: p.automacoes
+      });
+    }
     
     // Update active drawer target if open
     if (selectedProcesso) {
@@ -790,9 +794,15 @@ export default function ProcessosPage() {
   };
 
   // Save changes to integrantes
-  const saveIntegrantes = (updated: Integrante[]) => {
+  const saveIntegrantes = async (updated: Integrante[]) => {
     setIntegrantes(updated);
-    localStorage.setItem('erp_amitai_integrantes', JSON.stringify(updated));
+    for (const i of updated) {
+      await supabase.from('integrantes').upsert({
+        id: i.id,
+        name: i.nome,
+        role: i.cargo
+      });
+    }
 
     // Update active drawer target if open
     if (selectedIntegrante) {

@@ -111,50 +111,31 @@ export default function Dashboard() {
   const { startDate, endDate } = useFilter();
 
   useEffect(() => {
-    // 1. Load funnel clients from localStorage (Start with empty slate if not present)
-    const savedClients = localStorage.getItem('amitai-funil-v1');
-    if (savedClients) {
-      try {
-        setFunnelClients(JSON.parse(savedClients));
-      } catch (e) {
-        setFunnelClients([]);
-      }
-    } else {
-      setFunnelClients([]);
-    }
-
-    // 2. Load metas from localStorage
-    const savedPartnersMetas = localStorage.getItem('amitai-metas-socios-v1');
-    const savedGlobalMeta = localStorage.getItem('amitai-metas-global-v1');
-    
-    if (savedPartnersMetas) {
-      try {
-        setPartnersMetas(JSON.parse(savedPartnersMetas));
-      } catch (e) {
-        setPartnersMetas(DEFAULT_PARTNERS_METAS);
-      }
-    } else {
-      setPartnersMetas(DEFAULT_PARTNERS_METAS);
-      localStorage.setItem('amitai-metas-socios-v1', JSON.stringify(DEFAULT_PARTNERS_METAS));
-    }
-
-    if (savedGlobalMeta) {
-      try {
-        setGlobalMeta(JSON.parse(savedGlobalMeta));
-      } catch (e) {
-        setGlobalMeta(DEFAULT_GLOBAL_META);
-      }
-    } else {
-      setGlobalMeta(DEFAULT_GLOBAL_META);
-      localStorage.setItem('amitai-metas-global-v1', JSON.stringify(DEFAULT_GLOBAL_META));
-    }
-
-    // 3. Fetch financials from Supabase
+    // 1. Fetch all dashboard data from Supabase
     async function fetchData() {
       if (!startDate || !endDate) return;
 
       setLoading(true);
       try {
+        // Fetch clients
+        const { data: clientsData } = await supabase.from('clientes').select('*');
+        if (clientsData) setFunnelClients(clientsData as Client[]);
+
+        // Fetch Metas
+        const { data: sociosData } = await supabase.from('metas_socios').select('*');
+        if (sociosData && sociosData.length > 0) {
+          setPartnersMetas(sociosData as PartnerMeta[]);
+        } else {
+          setPartnersMetas(DEFAULT_PARTNERS_METAS);
+        }
+
+        const { data: globalData } = await supabase.from('metas_globais').select('*').eq('id', 1).maybeSingle();
+        if (globalData) {
+          setGlobalMeta({ weeklyProgress: globalData.weeklyProgress, weeklyTarget: globalData.weeklyTarget });
+        } else {
+          setGlobalMeta(DEFAULT_GLOBAL_META);
+        }
+
         const { data: receitas } = await supabase
           .from('receitas')
           .select('*')
@@ -282,11 +263,25 @@ export default function Dashboard() {
     setIsEditingMetas(false);
   };
 
-  const saveMetas = () => {
+  const saveMetas = async () => {
     setPartnersMetas(tempPartnersMetas);
     setGlobalMeta(tempGlobalMeta);
-    localStorage.setItem('amitai-metas-socios-v1', JSON.stringify(tempPartnersMetas));
-    localStorage.setItem('amitai-metas-global-v1', JSON.stringify(tempGlobalMeta));
+    
+    // Save to Supabase
+    for (const pm of tempPartnersMetas) {
+      await supabase.from('metas_socios').upsert({
+        name: pm.name,
+        dailyProgress: pm.dailyProgress,
+        dailyTarget: pm.dailyTarget
+      });
+    }
+
+    await supabase.from('metas_globais').upsert({
+      id: 1,
+      weeklyProgress: tempGlobalMeta.weeklyProgress,
+      weeklyTarget: tempGlobalMeta.weeklyTarget
+    });
+
     setIsEditingMetas(false);
   };
 
