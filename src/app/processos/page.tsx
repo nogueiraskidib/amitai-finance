@@ -872,9 +872,15 @@ export default function ProcessosPage() {
   };
 
   // Delete a process
-  const handleDeleteProcesso = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteProcesso = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!confirm('Deseja excluir este processo permanentemente?')) return;
+    const { error } = await supabase.from('processos').delete().eq('id', id);
+    if (error) {
+      console.error('Erro ao excluir processo:', error);
+      alert('Erro ao excluir processo.');
+      return;
+    }
     saveProcessos(processos.filter(p => p.id !== id));
     if (selectedProcesso?.id === id) {
       setSelectedProcesso(null);

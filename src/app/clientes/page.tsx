@@ -302,8 +302,14 @@ export default function Clientes() {
   };
 
   // Delete Client
-  const handleDeleteClient = (id: string) => {
+  const handleDeleteClient = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este cliente permanentemente?')) {
+      const { error } = await supabase.from('clientes').delete().eq('id', id);
+      if (error) {
+        console.error('Erro ao excluir cliente:', error);
+        alert('Erro ao excluir cliente.');
+        return;
+      }
       const updated = clients.filter(c => c.id !== id);
       saveState(updated);
       setIsModalOpen(false);
