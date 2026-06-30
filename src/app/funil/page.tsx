@@ -133,6 +133,9 @@ interface Client {
   progress?: number;
   requests?: string;
   priorityLevel?: string;
+
+  assetsChecklist?: any[];
+  operationalChecklist?: any[];
 }
 
 // Stage definitions

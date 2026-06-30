@@ -123,6 +123,11 @@ interface Client {
   calendarDate?: string;
   operationalProgress?: string;
   internalObservations?: string;
+
+  contractValue?: string;
+  progress?: number;
+  assetsChecklist?: any[];
+  operationalChecklist?: any[];
 }
 
 const STAGES = [
