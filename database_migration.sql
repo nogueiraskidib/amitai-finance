@@ -1,6 +1,6 @@
 -- Tabela para Clientes (Funil e Clientes Ativos)
 CREATE TABLE public.clientes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     "stageId" INTEGER NOT NULL,
     "timeInStage" INTEGER DEFAULT 0,
@@ -32,7 +32,7 @@ CREATE TABLE public.metas_socios (
 
 -- Tabela para Processos
 CREATE TABLE public.processos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
