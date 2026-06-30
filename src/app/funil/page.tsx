@@ -74,24 +74,33 @@ interface GeneralTask {
 interface Client {
   id: string;
   name: string;
-  stageId: number; // 1 to 12
-  timeInStage: number; // in days
-  status: string; // e.g. "Em andamento", "Pendente", "Concluído", "Crítico"
+  stageId: number;
+  timeInStage: number;
+  status: string;
   tasks: GeneralTask[];
   history: LogItem[];
   createdAt: string;
   lastUpdated: string;
   
-  // TAB 1: PERFIL DO CLIENTE
+  // TAB 1: PERFIL
   niche?: string;
   responsible?: string;
-  servicesContracted?: string; // Quick text summary of contracted services
-  contractDuration?: string; // Tempo de contrato
-  observations?: string; // Observações gerais
-  importantInfo?: string; // Informações importantes
+  servicesContracted?: string;
+  contractDuration?: string;
+  observations?: string;
+  importantInfo?: string;
 
-  // TAB 2: DOSSIÊ (Estudo estratégico)
+  // TAB 2: DOSSIÊ
   targetAudience?: string;
+  persona?: string;
+  funnelStage?: string;
+  awarenessLevel?: string;
+  copyObjective?: string;
+  channel?: string;
+  socialProof?: string;
+  desiredCTA?: string;
+  extraInfo?: string;
+  copyStructure?: string;
   pains?: string;
   objections?: string;
   differentials?: string;
@@ -104,36 +113,20 @@ interface Client {
   briefingComplete?: boolean;
   strategicObservations?: string;
 
-  // TAB 3: SERVIÇOS ATIVOS
+  // TAB 3: SERVIÇOS
   servicesList: ClientService[];
 
   // TAB 4: OPERACIONAL
-  internalResponsibles?: string; // Responsáveis internos (Neto, Gabriel, Manu)
+  internalResponsibles?: string;
   generalTasks: GeneralTask[];
   priority?: 'Baixa' | 'Média' | 'Alta';
-  pendingIssues?: string; // Pendências
-  calendarDate?: string; // Calendário
-  operationalProgress?: string; // Andamento operacional
-  internalObservations?: string; // Observações internas
+  pendingIssues?: string;
+  calendarDate?: string;
+  operationalProgress?: string;
+  internalObservations?: string;
 
-  // Legacy field support for stage conversion
-  origin?: string;
-  contactDate?: string;
-  conversationStatus?: string;
-  meetingDate?: string;
-  meetingTime?: string;
-  meetingLink?: string;
-  bookingStatus?: string;
-  proposalSent?: boolean;
   contractValue?: string;
-  forecastDate?: string;
-  contractName?: string;
-  signatureStatus?: string;
-  sendDate?: string;
   progress?: number;
-  requests?: string;
-  priorityLevel?: string;
-
   assetsChecklist?: any[];
   operationalChecklist?: any[];
 }
