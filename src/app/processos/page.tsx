@@ -773,17 +773,24 @@ export default function ProcessosPage() {
   const saveProcessos = async (updated: Processo[]) => {
     setProcessos(updated);
     for (const p of updated) {
-      await supabase.from('processos').upsert({
+      const { error } = await supabase.from('processos').upsert({
         id: p.id,
-        title: p.nome,
-        description: p.descricao,
-        author: p.responsavel,
-        assignedTo: p.responsavel,
+        tipo: p.tipo,
+        nome: p.nome,
+        responsavel: p.responsavel,
+        objetivo: p.objetivo ?? null,
+        descricao: p.descricao,
+        checklist: p.checklist ?? [],
+        passoAPasso: p.passoAPasso ?? [],
+        etapas: p.etapas ?? [],
+        prazo: p.prazo,
         status: p.status,
-        history: p.checklist,
-        attachments: p.materiais,
-        comments: p.automacoes
+        automacoes: p.automacoes ?? [],
+        materiais: p.materiais ?? [],
+        sop: p.sop ?? null,
+        observacoes: p.observacoes ?? null
       });
+      if (error) console.error('Error saving processes:', error);
     }
     
     // Update active drawer target if open
@@ -797,11 +804,17 @@ export default function ProcessosPage() {
   const saveIntegrantes = async (updated: Integrante[]) => {
     setIntegrantes(updated);
     for (const i of updated) {
-      await supabase.from('integrantes').upsert({
+      const { error } = await supabase.from('integrantes').upsert({
         id: i.id,
-        name: i.nome,
-        role: i.cargo
+        nome: i.nome,
+        cargo: i.cargo,
+        fotoGradient: i.fotoGradient ?? null,
+        borderColor: i.borderColor ?? null,
+        responsabilidades: i.responsabilidades ?? [],
+        tarefas: i.tarefas ?? [],
+        observacoes: i.observacoes ?? null
       });
+      if (error) console.error('Error saving members:', error);
     }
 
     // Update active drawer target if open
