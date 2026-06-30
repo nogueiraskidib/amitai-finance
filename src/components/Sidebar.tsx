@@ -14,7 +14,7 @@ const navItems = [
   { name: 'Clientes', href: '/clientes', icon: Users, color: 'text-brand-accent-purple' },
   { name: 'Processos', href: '/processos', icon: Workflow, color: 'text-brand-accent-amber' },
   { name: 'Fechamento', href: '/fechamento', icon: CalendarCheck, color: 'text-emerald-400' },
-  { name: 'HistÃ³rico', href: '/historico', icon: History, color: 'text-brand-muted' },
+  { name: 'Histórico', href: '/historico', icon: History, color: 'text-brand-muted' },
   { name: 'Registrar Entrada', href: '/registrar-entrada', icon: PlusCircle, color: 'text-green-400' },
   { name: 'Registrar Gasto', href: '/registrar-gasto', icon: MinusCircle, color: 'text-brand-danger' },
 ];
@@ -46,7 +46,7 @@ export default function Sidebar() {
             <h1 className="text-[15px] font-bold leading-tight" style={{ color: '#e8f0fe' }}>
               Amitai<span className="text-gradient"> Finance</span>
             </h1>
-            <p className="text-[10px]" style={{ color: '#4a6080' }}>ERP AgÃªncia</p>
+            <p className="text-[10px]" style={{ color: '#4a6080' }}>ERP Agência</p>
           </div>
         </div>
       </div>

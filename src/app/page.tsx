@@ -304,7 +304,7 @@ export default function Dashboard() {
   const activeClientsCount = funnelClients.filter(c => c.stageId === 7 || c.stageId === 9 || c.stageId === 12).length;
   const onboardingClientsCount = funnelClients.filter(c => c.stageId === 4 || c.stageId === 5 || c.stageId === 6).length;
   const lateClientsCount = funnelClients.filter(c => 
-    c.stageId === 7 && (c.status === 'CrÃ­tico' || c.timeInStage > 10)
+    c.stageId === 7 && (c.status === 'Crítico' || c.timeInStage > 10)
   ).length;
 
   // PROSPECTION ranking (Strictly counts REAL active leads by partner)
@@ -317,7 +317,7 @@ export default function Dashboard() {
 
   // OPERATION metrics
   const overdueTasksCount = funnelClients.reduce((acc, c) => acc + c.tasks.filter(t => !t.completed).length, 0);
-  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'CrÃ­tico').length;
+  const problemCampaignsCount = funnelClients.filter(c => c.stageId === 7 && c.status === 'Crítico').length;
   const pendingDeliveriesCount = funnelClients.filter(c => c.stageId === 7 && c.progress !== undefined && c.progress < 100).length;
 
   // FINANCIAL PREVISÃƒO (Faturamento + Expected contract closures)
@@ -343,7 +343,7 @@ export default function Dashboard() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-gradient">Dashboard Principal</h1>
-          <p className="text-brand-muted mt-1">VisÃ£o geral do faturamento, processos e performance real da Amitai.</p>
+          <p className="text-brand-muted mt-1">Visão geral do faturamento, processos e performance real da Amitai.</p>
         </div>
         <DateFilter />
       </header>
@@ -353,7 +353,7 @@ export default function Dashboard() {
         <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Faturamento MÃªs</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Faturamento Mês</p>
               <h3 className="text-2xl font-black text-gradient leading-tight">
                 {loading ? '...' : `R$ ${totalEntradas.toFixed(2).replace('.', ',')}`}
               </h3>
@@ -368,7 +368,7 @@ export default function Dashboard() {
         <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Lucro LÃ­quido</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Lucro Líquido</p>
               <h3 className="text-2xl font-black leading-tight">
                 {loading ? '...' : `R$ ${lucroLiquido.toFixed(2).replace('.', ',')}`}
               </h3>
@@ -398,11 +398,11 @@ export default function Dashboard() {
         <Link href="/fechamento" className="metric-card p-5 block cursor-pointer">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>PrevisÃ£o Financeira</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: "#334d6e" }}>Previsão Financeira</p>
               <h3 className="text-2xl font-black leading-tight">
                 {loading ? '...' : `R$ ${previsaoFaturamento.toFixed(2).replace('.', ',')}`}
               </h3>
-              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">PrevisÃ£o com novos contratos</span>
+              <span className="text-[10px] text-purple-400 font-semibold mt-1 block">Previsão com novos contratos</span>
             </div>
             <div className="p-3 bg-purple-500/10 rounded-lg">
               <Wallet className="text-purple-500" size={20} />
@@ -426,7 +426,7 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{newLeadsCount}</span>
             </div>
             <div className="flex justify-between items-center py-1">
-              <span className="text-xs text-brand-muted font-medium">ReuniÃµes (Etapa 2)</span>
+              <span className="text-xs text-brand-muted font-medium">Reuniões (Etapa 2)</span>
               <span className="text-sm font-bold text-white bg-brand-bg px-2.5 py-0.5 rounded-lg border border-brand-border">{meetingsCount}</span>
             </div>
             <div className="flex justify-between items-center py-1">
@@ -458,11 +458,11 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        {/* 3. PROSPECÃ‡ÃƒO (SÃ“CIOS RANKING REAL) */}
+        {/* 3. PROSPECÃ‡ÃƒO (SÓCIOS RANKING REAL) */}
         <div className="glass-card p-5">
           <h4 className="font-bold text-white text-sm flex items-center gap-2 border-b border-brand-border/40 pb-3">
             <Target size={16} className="text-purple-400" />
-            Contatos por SÃ³cio
+            Contatos por Sócio
           </h4>
           <div className="space-y-3">
             {partnersRanking.map((partner, idx) => (
@@ -505,7 +505,7 @@ export default function Dashboard() {
 
       </div>
 
-      {/* PROGRESSO DOS SÃ“CIOS PROSPECÃ‡ÃƒO (FULLY EDITABLE!) */}
+      {/* PROGRESSO DOS SÓCIOS PROSPECÃ‡ÃƒO (FULLY EDITABLE!) */}
       <div className="grid grid-cols-1 gap-6">
         
         {/* Partners Daily Progress Card */}
@@ -583,13 +583,13 @@ export default function Dashboard() {
       <div className="glass-card p-6 flex flex-col min-h-[320px]">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="text-brand-primary" size={20} />
-          <h3 className="text-xl font-bold text-white">Entradas e Gastos do MÃªs</h3>
+          <h3 className="text-xl font-bold text-white">Entradas e Gastos do Mês</h3>
         </div>
         
         <div className="flex-1 w-full min-h-[300px]">
           {loading ? (
             <div className="w-full h-full flex items-center justify-center text-brand-muted">
-              Carregando grÃ¡fico...
+              Carregando gráfico...
             </div>
           ) : chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -629,7 +629,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-brand-muted">
-              Sem dados para exibir no perÃ­odo selecionado.
+              Sem dados para exibir no período selecionado.
             </div>
           )}
         </div>
@@ -637,7 +637,7 @@ export default function Dashboard() {
 
       {/* Partners Payout Balances */}
       <div className="space-y-3">
-        <h3 className="text-lg font-bold text-white">Saldos dos SÃ³cios (Fechamento)</h3>
+        <h3 className="text-lg font-bold text-white">Saldos dos Sócios (Fechamento)</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {partners.map((partner) => (
             <Link 

@@ -184,22 +184,23 @@ export default function Clientes() {
   const saveState = async (updatedClients: Client[]) => {
     setClients(updatedClients);
     for (const c of updatedClients) {
-      await supabase.from('clientes').upsert({
+      const { error } = await supabase.from('clientes').upsert({
         id: c.id,
         name: c.name,
         stageId: c.stageId,
         timeInStage: c.timeInStage,
         status: c.status,
-        tasks: c.tasks,
-        history: c.history,
+        tasks: c.tasks ?? [],
+        history: c.history ?? [],
         createdAt: c.createdAt,
         lastUpdated: c.lastUpdated,
-        responsible: c.responsible,
-        contractValue: c.contractValue,
-        assetsChecklist: c.assetsChecklist,
-        operationalChecklist: c.operationalChecklist,
-        progress: c.progress
+        responsible: c.responsible ?? null,
+        contractValue: c.contractValue ?? null,
+        assetsChecklist: c.assetsChecklist ?? [],
+        operationalChecklist: c.operationalChecklist ?? [],
+        progress: c.progress ?? 0
       });
+      if (error) console.error('Supabase upsert error:', error);
     }
   };
 
@@ -277,7 +278,7 @@ export default function Clientes() {
   };
 
   // Add Client Form
-  const handleAddClient = (e: React.FormEvent) => {
+  const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClientName.trim()) return;
 
@@ -306,7 +307,29 @@ export default function Clientes() {
     };
 
     const updated = [newClient, ...clients];
-    saveState(updated);
+    // Insert directly to Supabase first
+    const { error } = await supabase.from('clientes').upsert({
+      id: newClient.id,
+      name: newClient.name,
+      stageId: newClient.stageId,
+      timeInStage: newClient.timeInStage,
+      status: newClient.status,
+      tasks: newClient.tasks,
+      history: newClient.history,
+      createdAt: newClient.createdAt,
+      lastUpdated: newClient.lastUpdated,
+      responsible: newClient.responsible ?? null,
+      contractValue: null,
+      assetsChecklist: [],
+      operationalChecklist: [],
+      progress: 0
+    });
+    if (error) {
+      console.error('Erro ao salvar cliente:', error);
+      alert('Erro ao salvar cliente: ' + error.message);
+      return;
+    }
+    setClients(updated);
 
     setNewClientName('');
     setIsAddModalOpen(false);

@@ -208,28 +208,29 @@ export default function FunilVendas() {
     setClients(updatedClients);
     // Upsert to Supabase
     for (const c of updatedClients) {
-      await supabase.from('clientes').upsert({
+      const { error } = await supabase.from('clientes').upsert({
         id: c.id,
         name: c.name,
         stageId: c.stageId,
         timeInStage: c.timeInStage,
         status: c.status,
-        tasks: c.tasks,
-        history: c.history,
+        tasks: c.tasks ?? [],
+        history: c.history ?? [],
         createdAt: c.createdAt,
         lastUpdated: c.lastUpdated,
-        responsible: c.responsible,
-        contractValue: c.contractValue,
-        assetsChecklist: c.assetsChecklist,
-        operationalChecklist: c.operationalChecklist,
-        progress: c.progress
+        responsible: c.responsible ?? null,
+        contractValue: c.contractValue ?? null,
+        assetsChecklist: c.assetsChecklist ?? [],
+        operationalChecklist: c.operationalChecklist ?? [],
+        progress: c.progress ?? 0
       });
+      if (error) console.error('Supabase upsert error:', error);
     }
   };
 
 
   // Add Client
-  const handleAddClient = (e: React.FormEvent) => {
+  const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClientName.trim()) return;
 
